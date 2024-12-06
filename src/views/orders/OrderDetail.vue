@@ -13,7 +13,7 @@
         <div class="status-badge" :class="order.status.toLowerCase()">
           {{ order.status }}
         </div>
-        <div class="order-no">Order #{{ order.orderNo }}</div>
+        <div class="order-no">Order# #{{ order.orderNo }}</div>
       </div>
 
       <!-- 停车场信息 -->
