@@ -1,0 +1,45 @@
+:root {
+  --primary-color: #8B5CF6;
+  --primary-light: #A78BFA;
+  --primary-dark: #7C3AED;
+  --background-color: #1F1F1F;
+  --surface-color: #2D2D2D;
+  --text-color: #FFFFFF;
+  --text-secondary: #A0A0A0;
+  --border-color: #3D3D3D;
+}
+
+/* 全局背景色 */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* Vant 组件主题覆盖 */
+:root:root {
+  --van-primary-color: var(--primary-color);
+  --van-background: var(--background-color);
+  --van-background-2: var(--surface-color);
+  --van-text-color: var(--text-color);
+  --van-text-color-2: var(--text-secondary);
+  --van-border-color: var(--border-color);
+  
+  /* TabBar 样式 */
+  --van-tabbar-background: var(--surface-color);
+  --van-tabbar-item-active-color: var(--primary-color);
+  --van-tabbar-item-text-color: var(--text-secondary);
+
+  /* NavBar 样式 */
+  --van-nav-bar-background: var(--surface-color);
+  --van-nav-bar-title-text-color: var(--text-color);
+  --van-nav-bar-icon-color: var(--text-color);
+
+  /* Cell 样式 */
+  --van-cell-background: var(--surface-color);
+  --van-cell-text-color: var(--text-color);
+  --van-cell-border-color: var(--border-color);
+
+  /* Button 样式 */
+  --van-button-primary-background: var(--primary-color);
+  --van-button-primary-border-color: var(--primary-color);
+} 
