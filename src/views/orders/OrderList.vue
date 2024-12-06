@@ -2,7 +2,7 @@
   <div class="orders-page">
     <h1 class="page-title">My Orders</h1>
 
-    <!-- 搜索和筛选区域 -->
+    <!-- Search and filter area -->
     <div class="sticky-header">
       <div class="search-filter-bar">
         <van-search
@@ -17,7 +17,7 @@
         </div>
       </div>
 
-      <!-- 服务类型切换 -->
+      <!-- Service type tabs -->
       <div class="tab-group">
         <div 
           class="tab" 
@@ -46,17 +46,26 @@
       </div>
     </div>
 
-    <!-- 订单列表 -->
+    <!-- Order list -->
     <div class="order-list">
-      <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
+      <van-pull-refresh 
+        v-model="refreshing" 
+        @refresh="onRefresh"
+        success-text="Refresh successful"
+        pulling-text="Pull to refresh..."
+        loosing-text="Release to refresh..."
+        loading-text="Loading..."
+      >
         <van-list
           v-model:loading="loading"
           :finished="finished"
           finished-text="No more orders"
+          loading-text="Loading..."
+          error-text="Request failed, click to retry"
           @load="onLoad"
         >
           <div v-for="order in displayOrders" :key="order.id" class="order-card" @click="goToDetail(order.id)">
-            <!-- 停车场名称和状态 -->
+            <!-- Parking lot name and status -->
             <div class="card-header">
               <h3>{{ order.parkingLot.name }}</h3>
               <div class="status-badge" :class="getStatusType(order.status)">
@@ -64,13 +73,13 @@
               </div>
             </div>
 
-            <!-- 地址信息 -->
+            <!-- Address info -->
             <div class="location-info">
               <van-icon name="location-o" />
               <span>{{ order.parkingLot.address }}</span>
             </div>
 
-            <!-- 时间和预定信息 -->
+            <!-- Time and reservation info -->
             <div class="time-info">
               <div class="time-row">
                 <van-icon name="clock-o" />
@@ -81,7 +90,7 @@
                 </template>
               </div>
               
-              <!-- 预定时长或使用时长 -->
+              <!-- Duration or reservation time -->
               <div class="duration-row" v-if="isReservation(order) || order.duration">
                 <van-icon name="underway-o" />
                 <span v-if="isReservation(order)" class="reservation">
@@ -90,10 +99,10 @@
                 <span v-else class="duration">{{ order.duration }}</span>
               </div>
 
-              <!-- 分隔线 -->
+              <!-- Divider -->
               <div class="info-divider"></div>
 
-              <!-- 车位信息 -->
+              <!-- Spot info -->
               <div class="spot-info">
                 <div class="spot-row">
                   <van-icon name="location" />
@@ -106,7 +115,7 @@
               </div>
             </div>
 
-            <!-- 车牌和价格 -->
+            <!-- License plate and price -->
             <div class="card-footer">
               <div class="car-plate-info">
                 <van-icon name="car-o" />
@@ -114,17 +123,12 @@
                 <span class="price">${{ order.totalAmount.toFixed(2) }}</span>
               </div>
             </div>
-
-            <!-- 移除状态提示 -->
-            <!-- <div class="status-hint" v-if="getStatusHint(order.status)">
-              {{ getStatusHint(order.status) }}
-            </div> -->
           </div>
         </van-list>
       </van-pull-refresh>
     </div>
 
-    <!-- 状态筛选弹出层 -->
+    <!-- Status filter popup -->
     <van-popup
       v-model:show="showFilter"
       position="bottom"
@@ -157,7 +161,7 @@ import { showToast } from 'vant';
 import type { Order } from '@/types/orders';
 import { formatTime } from '@/utils/format';
 
-// 状态管理
+// Status management
 const router = useRouter();
 const searchText = ref('');
 const status = ref('all');
@@ -167,7 +171,7 @@ const finished = ref(false);
 const refreshing = ref(false);
 const orders = ref<Order[]>([]);
 
-// 筛选选项
+// Filter options
 const statusOptions = [
   { text: 'All Status', value: 'all' },
   { text: 'Pending', value: 'pending' },
@@ -176,7 +180,7 @@ const statusOptions = [
   { text: 'Cancelled', value: 'cancelled' }
 ] as const;
 
-// 订单状态类型
+// Order status types
 type ValetStatus = 
   | 'Reserved' 
   | 'CheckedIn' 
@@ -203,20 +207,20 @@ type ParkingStatus =
   | 'RefundFailed'
   | 'Overtime';
 
-// 过滤后的订单列表
+// Filtered order list
 const displayOrders = computed(() => {
   return orders.value.filter((order: Order) => {
-    // 服务类型筛选
+    // Service type filter
     if (order.serviceType !== activeTab.value) {
       return false;
     }
 
-    // 状态筛选
+    // Status filter
     if (status.value !== 'all' && order.status !== status.value) {
       return false;
     }
 
-    // 搜索文本筛选
+    // Search text filter
     if (searchText.value) {
       const searchLower = searchText.value.toLowerCase();
       const hasMatchingPlate = order.vehicles.some(
@@ -231,7 +235,7 @@ const displayOrders = computed(() => {
   });
 });
 
-// 获取状态对应的样式类型
+// Get status corresponding style type
 function getStatusType(status: ValetStatus | ParkingStatus) {
   const warningStatuses = ['PendingPayment', 'Reserved', 'Requested', 'OnTheWay', 'Overtime'];
   const successStatuses = ['Completed', 'Closed', 'Paid', 'Refunded'];
@@ -245,12 +249,12 @@ function getStatusType(status: ValetStatus | ParkingStatus) {
   return 'default';
 }
 
-// 获取状态文本
+// Get status text
 function getStatusText(status: ValetStatus | ParkingStatus) {
   return status.replace(/([A-Z])/g, ' $1').trim();
 }
 
-// 获取状态提示文本
+// Get status hint text
 function getStatusHint(status: ValetStatus | ParkingStatus) {
   const hints: Record<string, string> = {
     PendingPayment: 'Waiting for payment',
@@ -269,14 +273,14 @@ function getStatusHint(status: ValetStatus | ParkingStatus) {
   return hints[status] || '';
 }
 
-// 搜索
+// Search
 function onSearch() {
-  orders.value = []; // 清空列表
+  orders.value = []; // Clear list
   loading.value = true;
   onLoad();
 }
 
-// 加载数据
+// Load data
 function onLoad() {
   setTimeout(() => {
     const parkingStatuses: ParkingStatus[] = [
@@ -320,7 +324,7 @@ function onLoad() {
   }, 1000);
 }
 
-// 刷新
+// Refresh
 function onRefresh() {
   finished.value = false;
   orders.value = [];
@@ -328,12 +332,12 @@ function onRefresh() {
   refreshing.value = false;
 }
 
-// 查看订单详情
+// View order details
 function showOrderDetail(order: Order) {
   router.push(`/orders/${order.id}`);
 }
 
-// 获取各类型订单数量
+// Get order counts for different types
 function getOrderCount(type: string) {
   if (type === 'all') {
     return mockOrders.valet.length + mockOrders.parking.length;
@@ -350,17 +354,17 @@ function showStatusFilter() {
 function selectStatus(value: string) {
   status.value = value;
   showFilter.value = false;
-  onSearch(); // 更新列表
+  onSearch(); // Update list
 }
 
-// 判断是否为预定订单
+// Check if it's a reservation order
 function isReservation(order: Order) {
   const now = new Date();
   const startTime = new Date(order.startTime);
   return startTime > now;
 }
 
-// 获取预定时长
+// Get reservation duration
 function getReservationDuration(order: Order) {
   const now = new Date();
   const startTime = new Date(order.startTime);
@@ -374,7 +378,7 @@ function getReservationDuration(order: Order) {
   }
 }
 
-// 格式化时间
+// Format time
 function formatTime(time: string) {
   const date = new Date(time);
   return date.toLocaleString('en-US', {
@@ -387,7 +391,7 @@ function formatTime(time: string) {
   });
 }
 
-// 计算超时时长
+// Calculate overtime duration
 function getOvertimeDuration(order: Order) {
   const endTime = new Date(order.endTime || order.startTime);
   const now = new Date();
@@ -746,7 +750,7 @@ const mockOrders = {
   ]
 };
 
-// 修改 activeTab 的 watch 或点击处理函数
+// Modify activeTab's watch or click handler
 function handleTabChange(tab: string) {
   activeTab.value = tab;
   if (tab === 'all') {
@@ -754,16 +758,16 @@ function handleTabChange(tab: string) {
   } else {
     orders.value = mockOrders[tab as keyof typeof mockOrders] || [];
   }
-  // 重置列表状态
+  // Reset list state
   finished.value = true;
   loading.value = false;
 }
 
-// 跳转到订单详情
+// Navigate to order details
 function goToDetail(orderId: string) {
   const currentOrder = orders.value.find(order => order.id === orderId);
   if (currentOrder) {
-    // 使用 query 传递订单数据
+    // Use query to pass order data
     router.push({
       name: 'ParkingOrderDetail',
       params: { id: orderId },
@@ -829,7 +833,7 @@ function goToDetail(orderId: string) {
   background: #1a1a1a;
 }
 
-/* 状态筛选弹出层样式 */
+/* Status filter popup styles */
 .status-popup {
   max-height: 70vh;
 }
@@ -1079,7 +1083,7 @@ function goToDetail(orderId: string) {
   margin-left: auto;
 }
 
-/* 加载状态样式 */
+/* Loading state styles */
 :deep(.van-list),
 :deep(.van-pull-refresh) {
   min-height: calc(100vh - 200px);
@@ -1102,7 +1106,7 @@ function goToDetail(orderId: string) {
   flex-shrink: 0;
 }
 
-/* 移除状态提示相关样式 */
+/* Status hint related styles */
 .status-hint {
   display: none;
 }

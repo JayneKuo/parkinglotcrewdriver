@@ -1,52 +1,47 @@
 <template>
   <div class="layout">
     <router-view />
-    <van-tabbar 
-      v-model="active" 
-      v-show="!hideTabbar"
-    >
+    <van-tabbar v-model="active" route v-show="!hideTabbar">
       <van-tabbar-item to="/home" icon="home-o">Home</van-tabbar-item>
-      <van-tabbar-item to="/map" icon="location-o">Map</van-tabbar-item>
-      <van-tabbar-item to="/parking-orders" icon="records">Orders</van-tabbar-item>
+      <van-tabbar-item to="/parking-orders" icon="orders-o">Orders</van-tabbar-item>
+      <van-tabbar-item to="/records" icon="clock-o">Records</van-tabbar-item>
+      <van-tabbar-item to="/profile" icon="user-o">Profile</van-tabbar-item>
     </van-tabbar>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
 
-const route = useRoute()
-const active = ref(0)
+const route = useRoute();
+const active = ref(0);
 
-// 计算是否隐藏底部导航
+// Hide the bottom navigation in some pages
 const hideTabbar = computed(() => {
-  return route.path.includes('/parking/') || route.path.includes('/parking-orders/');
-})
-
-// 根据路由更新底部导航激活状态
-watch(
-  () => route.path,
-  (path: string) => {
-    switch (path) {
-      case '/home':
-        active.value = 0
-        break
-      case '/map':
-        active.value = 1
-        break
-      case '/parking-orders':
-        active.value = 2
-        break
-    }
-  },
-  { immediate: true }
-)
+  return route.path.includes('/parking/') || 
+         route.path.includes('/parking-orders/') ||
+         route.path.includes('/profile/');
+});
 </script>
 
 <style scoped>
 .layout {
   min-height: 100vh;
-  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.van-tabbar) {
+  background: #1a1a1a;
+  border-top: 1px solid #2a2a2a;
+}
+
+:deep(.van-tabbar-item) {
+  color: #666;
+}
+
+:deep(.van-tabbar-item--active) {
+  color: #7c4dff;
 }
 </style> 
