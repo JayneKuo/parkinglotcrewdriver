@@ -157,14 +157,34 @@
         <van-icon name="cross" @click="showFilter = false" />
       </div>
       <div class="status-list">
+        <!-- All Status 选项 -->
         <div
-          v-for="option in statusOptions"
-          :key="option.value"
           class="status-item"
-          :class="{ active: status === option.value }"
-          @click="selectStatus(option.value)"
+          :class="{ active: status === 'all' && activeTab === 'all' }"
+          @click="selectStatus('all')"
         >
-          {{ option.text }}
+          All Status
+        </div>
+
+        <!-- 业务类型分组 -->
+        <div
+          v-for="group in allStatusOptions.slice(1)"
+          :key="group.value"
+          class="status-group"
+        >
+          <div class="group-title">{{ group.text }}</div>
+          <div
+            v-for="child in group.children"
+            :key="child.value"
+            class="status-item"
+            :class="{
+              active: (child.value === `${group.value}-all` && activeTab === group.value && status === 'all') ||
+                     (child.value === `${group.value}-${status}` && activeTab === group.value)
+            }"
+            @click="selectStatus(child.value)"
+          >
+            {{ child.text }}
+          </div>
         </div>
       </div>
     </van-popup>
@@ -191,13 +211,60 @@ const refreshing = ref(false);
 const orders = ref<Order[]>([]);
 
 // Filter options
-const statusOptions = [
+interface StatusOption {
+  text: string;
+  value: string;
+  children?: StatusOption[];
+}
+
+// 修改状态选项定义
+const allStatusOptions: StatusOption[] = [
   { text: 'All Status', value: 'all' },
-  { text: 'Pending', value: 'pending' },
-  { text: 'Confirmed', value: 'confirmed' },
-  { text: 'Completed', value: 'completed' },
-  { text: 'Cancelled', value: 'cancelled' }
-] as const;
+  { 
+    text: 'Valet',
+    value: 'valet',
+    children: [
+      { text: 'All Valet', value: 'valet-all' },
+      { text: 'Reserved', value: 'valet-Reserved' },
+      { text: 'Checked In', value: 'valet-CheckedIn' },
+      { text: 'Parked', value: 'valet-Parked' },
+      { text: 'Pickup Requested', value: 'valet-Requested' },
+      { text: 'On The Way', value: 'valet-OnTheWay' },
+      { text: 'Ready', value: 'valet-Ready' },
+      { text: 'Completed', value: 'valet-Completed' },
+      { text: 'Cancelled', value: 'valet-Cancelled' }
+    ]
+  },
+  {
+    text: 'Parking',
+    value: 'parking',
+    children: [
+      { text: 'All Parking', value: 'parking-all' },
+      { text: 'Pending Payment', value: 'parking-PendingPayment' },
+      { text: 'Awaiting Use', value: 'parking-AwaitingUse' },
+      { text: 'In Use', value: 'parking-InUse' },
+      { text: 'Used', value: 'parking-Used' },
+      { text: 'Overtime', value: 'parking-Overtime' },
+      { text: 'Completed', value: 'parking-Completed' },
+      { text: 'Cancelled', value: 'parking-Cancelled' }
+    ]
+  },
+  {
+    text: 'Dock',
+    value: 'dock',
+    children: [
+      { text: 'All Dock', value: 'dock-all' },
+      { text: 'Requested', value: 'dock-Requested' },
+      { text: 'Scheduled', value: 'dock-Scheduled' },
+      { text: 'Arrived', value: 'dock-Arrived' },
+      { text: 'In Progress', value: 'dock-InProgress' },
+      { text: 'Loading Completed', value: 'dock-LoadingCompleted' },
+      { text: 'Payment Pending', value: 'dock-PaymentPending' },
+      { text: 'Completed', value: 'dock-Completed' },
+      { text: 'Cancelled', value: 'dock-Cancelled' }
+    ]
+  }
+];
 
 // Order status types
 type ValetStatus = 
@@ -431,10 +498,27 @@ function showStatusFilter() {
   showFilter.value = true;
 }
 
+// 修改状态选择处理函数
 function selectStatus(value: string) {
-  status.value = value;
+  if (value === 'all') {
+    status.value = 'all';
+    activeTab.value = 'all';
+  } else {
+    const [serviceType, statusValue] = value.split('-');
+    if (statusValue === 'all') {
+      // 选择了某个业务类型的全部状态
+      status.value = 'all';
+      activeTab.value = serviceType;
+    } else {
+      // 选择了具体状态
+      status.value = statusValue;
+      activeTab.value = serviceType;
+    }
+  }
   showFilter.value = false;
-  onSearch(); // Update list
+  orders.value = [];
+  loading.value = true;
+  onLoad();
 }
 
 // Check if it's a reservation order
@@ -1208,5 +1292,38 @@ function shouldShowDockSpot(status: string) {
 /* 添加悬停效果 */
 .venue-name:hover {
   opacity: 0.8;
+}
+
+/* 添加状态组样式 */
+.status-group {
+  margin-bottom: 16px;
+}
+
+.group-title {
+  color: #888;
+  font-size: 14px;
+  padding: 8px 16px;
+  background: #1a1a1a;
+}
+
+.status-list {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.status-item {
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-item:active {
+  background: rgba(124, 77, 255, 0.05);
+}
+
+.status-item.active {
+  color: #7c4dff;
+  background: rgba(124, 77, 255, 0.1);
 }
 </style> 
