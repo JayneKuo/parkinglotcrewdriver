@@ -1,7 +1,7 @@
 <template>
   <div class="layout">
     <router-view />
-    <van-tabbar v-model="active" route v-show="!hideTabbar">
+    <van-tabbar v-if="!hideTabbar" v-model="active">
       <van-tabbar-item to="/home" icon="home-o">Home</van-tabbar-item>
       <van-tabbar-item to="/parking-orders" icon="orders-o">Orders</van-tabbar-item>
       <van-tabbar-item to="/records" icon="clock-o">Records</van-tabbar-item>
@@ -18,11 +18,7 @@ const route = useRoute();
 const active = ref(0);
 
 // Hide the bottom navigation in some pages
-const hideTabbar = computed(() => {
-  return route.path.includes('/parking/') || 
-         route.path.includes('/parking-orders/') ||
-         route.path.includes('/profile/');
-});
+const hideTabbar = computed(() => route.meta.hideTabbar);
 </script>
 
 <style scoped>

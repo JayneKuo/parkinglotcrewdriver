@@ -1,6 +1,7 @@
 export enum ServiceType {
   Parking = 'parking',  // 自助停车
-  Valet = 'valet'      // 代客泊车
+  Valet = 'valet',     // 代客泊车
+  Dock = 'dock'        // 装卸货
 }
 
 export enum OrderStatus {

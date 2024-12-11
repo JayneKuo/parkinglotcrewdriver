@@ -99,49 +99,15 @@
               </div>
 
               <!-- 服务类型标签 -->
-              <div class="service-tags">
-                <!-- 基础服务标签 -->
-                <van-tag 
-                  plain
-                  type="primary"
-                  size="mini"
-                  class="service-tag"
-                >
-                  Standard Parking
-                </van-tag>
-                
-                <!-- 代客泊车标签 -->
-                <van-tag 
-                  v-if="lot.serviceTypes.includes(ServiceType.Valet)"
-                  plain
-                  type="success"
-                  size="mini"
-                  class="service-tag"
-                >
+              <div class="services">
+                <span class="service-tag" v-if="lot.serviceTypes.includes(ServiceType.Valet)">
+                  <van-icon name="service" />
                   Valet
-                </van-tag>
-
-                <!-- 不可取消标签 -->
-                <van-tag 
-                  v-if="!lot.cancellable"
-                  plain
-                  type="danger"
-                  size="mini"
-                  class="service-tag"
-                >
-                  Non-refundable
-                </van-tag>
-
-                <!-- 24小时预订标签 -->
-                <van-tag 
-                  v-if="lot.isReservable"
-                  plain
-                  type="warning"
-                  size="mini"
-                  class="service-tag"
-                >
-                  24h Booking
-                </van-tag>
+                </span>
+                <span class="service-tag" v-if="lot.serviceTypes.includes(ServiceType.Dock)">
+                  <van-icon name="logistics" />
+                  Loading Dock
+                </span>
               </div>
             </div>
           </div>
@@ -359,6 +325,18 @@ const getStatusClass = (lot: ParkingLot) => {
   const availableSpots = lot.spots[0].available;
   if (availableSpots === 0) return 'full';
   return 'available';
+};
+
+// 获取服务类型标签样式
+const getServiceTagStyle = (type: ServiceType) => {
+  switch (type) {
+    case ServiceType.Valet:
+      return { color: '#4361ee', background: 'rgba(67, 97, 238, 0.1)' };
+    case ServiceType.Dock:
+      return { color: '#2ec4b6', background: 'rgba(46, 196, 182, 0.1)' };
+    default:
+      return { color: '#7c4dff', background: 'rgba(124, 77, 255, 0.1)' };
+  }
 };
 </script>
 
@@ -656,7 +634,7 @@ const getStatusClass = (lot: ParkingLot) => {
   cursor: pointer;
 }
 
-/* 响应式调整 */
+/* 响应式整 */
 @media (max-width: 360px) {
   .price-layout-three,
   .price-layout-grid-3 {
@@ -800,5 +778,37 @@ const getStatusClass = (lot: ParkingLot) => {
 
 .status-tag {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.services {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.service-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.service-tag .van-icon {
+  font-size: 14px;
+}
+
+/* 代客泊车标签样式 */
+.service-tag:has(.van-icon-service) {
+  color: #4361ee;
+  background: rgba(67, 97, 238, 0.1);
+}
+
+/* 装卸货标签样式 */
+.service-tag:has(.van-icon-logistics) {
+  color: #2ec4b6;
+  background: rgba(46, 196, 182, 0.1);
 }
 </style> 

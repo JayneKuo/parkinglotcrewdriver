@@ -32,15 +32,50 @@
             <div class="option-desc">We park for you</div>
             <span v-if="!hasValetService" class="option-tag">Not Available</span>
           </div>
+          <div 
+            class="option-card"
+            :class="{ 
+              active: serviceType === 'dock',
+              disabled: !hasDockService 
+            }"
+            @click="selectService('dock')"
+          >
+            <div class="option-name">Open Dock</div>
+            <div class="option-desc">Loading & Unloading</div>
+            <span v-if="!hasDockService" class="option-tag">Not Available</span>
+          </div>
         </div>
       </div>
 
-      <!-- Spot Type -->
-      <div class="section">
+      <!-- Load Type (仅在选择 Dock 服务时显示) -->
+      <div class="section" v-if="serviceType === 'dock'">
+        <h2 class="section-title">LOAD TYPE</h2>
+        <div class="option-grid">
+          <div 
+            class="option-card"
+            :class="{ active: loadType === 'inbound' }"
+            @click="selectLoadType('inbound')"
+          >
+            <div class="option-name">Inbound</div>
+            <div class="option-desc">Loading goods in</div>
+          </div>
+          <div 
+            class="option-card"
+            :class="{ active: loadType === 'outbound' }"
+            @click="selectLoadType('outbound')"
+          >
+            <div class="option-name">Outbound</div>
+            <div class="option-desc">Loading goods out</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spot Type (只在非 Dock 服务时显示) -->
+      <div class="section" v-if="serviceType !== 'dock'">
         <h2 class="section-title">SPOT TYPE</h2>
         <div class="option-grid">
           <div 
-            v-for="spot in availableSpotTypes"
+            v-for="spot in filteredSpotTypes"
             :key="spot.type"
             class="option-card"
             :class="{ 
@@ -124,8 +159,23 @@
         </div>
       </div>
 
+      <!-- Duration (Only for Dock service) -->
+      <div class="section" v-if="serviceType === 'dock'">
+        <h2 class="section-title">ESTIMATED DURATION</h2>
+        <div class="input-field">
+          <input 
+            type="number" 
+            v-model="duration"
+            min="1"
+            :max="getMaxDuration"
+            class="custom-input"
+          >
+          <span class="unit-text">{{ getPriceUnit }}</span>
+        </div>
+      </div>
+
       <!-- Summary -->
-      <div class="summary-card">
+      <div class="summary-card" v-if="serviceType !== 'dock'">
         <div class="summary-row">
           <span>Start Time:</span>
           <span>{{ formatTime(dateTimeStr || '2024/12/04 10:14') }}</span>
@@ -150,6 +200,22 @@
           <span class="price">${{ calculateTotal }}</span>
         </div>
       </div>
+
+      <!-- Dock Summary -->
+      <div class="summary-card" v-if="serviceType === 'dock'">
+        <div class="summary-row">
+          <span>Load Type:</span>
+          <span>{{ formatLoadType(loadType) }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Start Time:</span>
+          <span>{{ formatTime(dateTimeStr || '2024/12/04 10:14') }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Estimated Duration:</span>
+          <span>{{ duration }} {{ getPriceUnit }}{{ duration > 1 ? 's' : '' }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Bottom Button -->
@@ -159,7 +225,7 @@
         @click="handleSubmit"
         class="submit-btn"
       >
-        Enter Vehicle Info
+        {{ serviceType === 'dock' ? 'Confirm Dock Reservation' : 'Enter Vehicle Info' }}
       </van-button>
     </div>
 
@@ -227,6 +293,10 @@ const calculateTotal = computed(() => {
 
 const hasValetService = computed(() => {
   return parkingLot.value?.serviceTypes?.includes('valet') ?? false;
+});
+
+const hasDockService = computed(() => {
+  return parkingLot.value?.serviceTypes?.includes('dock') ?? false;
 });
 
 const isValid = computed(() => {
@@ -323,6 +393,7 @@ const onTimeConfirm = (values: { selectedValues: string[] }) => {
 
 function selectPrice(price) {
   selectedPrice.value = price;
+  duration.value = 1;
 }
 
 function formatTime(dateStr: string) {
@@ -359,18 +430,34 @@ function handleBack() {
 }
 
 function handleSubmit() {
-  router.push({
-    path: `/parking/${route.params.id}/vehicle`,
-    query: {
-      service: serviceType.value,
-      spots: spots.value.toString()
-    }
-  });
+  if (serviceType.value === 'dock') {
+    router.push({
+      path: `/parking/${route.params.id}/dock-confirm`,
+      query: {
+        loadType: loadType.value,
+        startTime: dateTimeStr.value,
+        duration: duration.value,
+        unit: getPriceUnit.value
+      }
+    });
+  } else {
+    router.push({
+      path: `/parking/${route.params.id}/vehicle`,
+      query: {
+        service: serviceType.value,
+        spots: spots.value.toString()
+      }
+    });
+  }
 }
 
-function selectService(type: 'standard' | 'valet') {
+function selectService(type: 'standard' | 'valet' | 'dock') {
   if (type === 'valet' && !hasValetService.value) {
     showToast('Valet service is not available at this location');
+    return;
+  }
+  if (type === 'dock' && !hasDockService.value) {
+    showToast('Dock service is not available at this location');
     return;
   }
   serviceType.value = type;
@@ -378,28 +465,89 @@ function selectService(type: 'standard' | 'valet') {
 
 // 车位类型选择
 const selectedSpotType = ref('standard');
-const availableSpotTypes = computed<SpotType[]>(() => [
-  { type: 'standard', available: 20 },
-  { type: 'compact', available: 15 },
-  { type: 'large', available: 8 },
-  { type: 'handicap', available: 5 }
-]);
 
+// 根据服务类型过滤可用的车位类型
+const filteredSpotTypes = computed(() => {
+  if (serviceType.value === 'dock') {
+    // 只显示货车车位
+    return availableSpotTypes.value.filter(spot => spot.type === 'truck');
+  }
+  // 其他服务显示所有车位类型
+  return availableSpotTypes.value;
+});
+
+const availableSpotTypes = computed<SpotType[]>(() => {
+  const parkingSpots = parkingLot.value?.spots || [];
+  return parkingSpots.map(spot => ({
+    type: spot.type,
+    available: spot.available
+  }));
+});
+
+// 格式化车位类型显示文本
+function formatSpotType(type: string): string {
+  const types: Record<string, string> = {
+    car: 'Standard',
+    truck: 'Loading Dock',
+    ev: 'EV Charging',
+    handicap: 'Handicap'
+  };
+  return types[type] || type;
+}
+
+// 选择车位类型
 function selectSpotType(spot: SpotType) {
   if (spot.available > 0) {
     selectedSpotType.value = spot.type;
   }
 }
 
-function formatSpotType(type: string): string {
-  const types: Record<string, string> = {
-    standard: 'Standard',
-    compact: 'Compact',
-    large: 'Large',
-    handicap: 'Handicap'
-  };
-  return types[type] || type;
+// 装卸货类型
+type LoadType = 'inbound' | 'outbound';
+const loadType = ref<LoadType>('inbound');
+const selectedDock = ref<string>('');
+
+// 选择装卸货类型
+function selectLoadType(type: LoadType) {
+  loadType.value = type;
+  // 可以在这里根据 loadType 自动分配 dock number
+  selectedDock.value = `DOCK-${Math.floor(Math.random() * 100).toString().padStart(3, '0')}`;
 }
+
+// 格式化装卸货类型显示文本
+function formatLoadType(type: LoadType): string {
+  const types: Record<LoadType, string> = {
+    inbound: 'Inbound Loading',
+    outbound: 'Outbound Loading'
+  };
+  return types[type];
+}
+
+// 获取价格单位
+const getPriceUnit = computed(() => {
+  if (!selectedPrice.value) return 'hour';
+  const unitMap: Record<string, string> = {
+    'hour': 'hour',
+    '8h': 'hour',
+    'day': 'day',
+    'week': 'week',
+    'month': 'month'
+  };
+  return unitMap[selectedPrice.value.type] || 'hour';
+});
+
+// 获取最大时长
+const getMaxDuration = computed(() => {
+  if (!selectedPrice.value) return 24;
+  const maxMap: Record<string, number> = {
+    'hour': 24,
+    '8h': 24,
+    'day': 30,
+    'week': 4,
+    'month': 12
+  };
+  return maxMap[selectedPrice.value.type] || 24;
+});
 </script>
 
 <style scoped>
@@ -441,7 +589,7 @@ function formatSpotType(type: string): string {
 
 .option-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
@@ -607,5 +755,54 @@ function formatSpotType(type: string): string {
 
 :deep(.van-picker__toolbar) {
   border-bottom: 1px solid #333;
+}
+
+.load-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: currentColor;
+  opacity: 0.7;
+}
+
+.option-card.active .load-icon {
+  opacity: 1;
+}
+
+/* 调整装卸货类型选择的网格布局为两列 */
+.option-grid:has(.load-icon) {
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 0;
+}
+
+/* 为 Dock 服务添加特殊样式 */
+.option-card:has(.load-icon) {
+  padding-right: 36px;
+}
+
+/* 调整 Dock 服务时的间距 */
+.section + .section {
+  margin-top: 24px;
+}
+
+.unit-text {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 14px;
+  min-width: 45px;
+  text-align: right;
+}
+
+.input-field {
+  position: relative;
+}
+
+.input-field .custom-input {
+  padding-right: 60px;
 }
 </style>

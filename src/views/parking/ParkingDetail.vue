@@ -181,6 +181,36 @@
           <p>Rates and availability are subject to change. Please follow all parking rules and regulations.</p>
         </div>
       </div>
+
+      <!-- 可用服务 -->
+      <div class="services-section">
+        <h3>Available Services</h3>
+        <div class="service-list">
+          <div class="service-item">
+            <van-icon name="car-o" />
+            <div class="service-info">
+              <span class="service-name">Self-parking</span>
+              <span class="service-desc">Park your car by yourself</span>
+            </div>
+          </div>
+          
+          <div class="service-item" v-if="hasValetService">
+            <van-icon name="service" />
+            <div class="service-info">
+              <span class="service-name">Valet Service</span>
+              <span class="service-desc">We park for you</span>
+            </div>
+          </div>
+          
+          <div class="service-item" v-if="hasDockService">
+            <van-icon name="logistics" />
+            <div class="service-info">
+              <span class="service-name">Open Dock</span>
+              <span class="service-desc">Loading & Unloading service</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 底部预订栏 -->
@@ -723,6 +753,48 @@ h3 {
 .nav-bar {
   display: none;
 }
+
+.services-section {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.service-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.service-item .van-icon {
+  font-size: 24px;
+  color: #7c4dff;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.service-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.service-desc {
+  font-size: 13px;
+  color: #666;
+}
 </style>
 
 <script setup lang="ts">
@@ -730,7 +802,7 @@ import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showToast } from 'vant';
 import type { ParkingLot } from '@/types/parking';
-import { ServiceType } from '@/types/parking';
+import { ServiceType } from '@/types/orders';
 import { 
   formatDistance, 
   handleNavigate, 
@@ -742,9 +814,18 @@ import {
 
 const route = useRoute();
 const router = useRouter();
-const parkingLot = ref<ParkingLot>();
+const parkingLot = ref<ParkingLot | undefined>();
 const currentImageIndex = ref(0);
 const showNav = ref(false);
+
+// 计算属性检查服务类型
+const hasValetService = computed(() => {
+  return parkingLot.value?.serviceTypes?.includes(ServiceType.Valet) ?? false;
+});
+
+const hasDockService = computed(() => {
+  return parkingLot.value?.serviceTypes?.includes(ServiceType.Dock) ?? false;
+});
 
 // 获取所有图片
 const allImages = computed(() => {
