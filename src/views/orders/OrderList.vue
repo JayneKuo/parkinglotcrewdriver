@@ -43,6 +43,14 @@
           Parking
           <span class="count">{{ getOrderCount('parking') }}</span>
         </div>
+        <div 
+          class="tab" 
+          :class="{ active: activeTab === 'dock' }" 
+          @click="handleTabChange('dock')"
+        >
+          Dock
+          <span class="count">{{ getOrderCount('dock') }}</span>
+        </div>
       </div>
     </div>
 
@@ -67,7 +75,14 @@
           <div v-for="order in displayOrders" :key="order.id" class="order-card" @click="goToDetail(order.id)">
             <!-- Parking lot name and status -->
             <div class="card-header">
-              <h3>{{ order.parkingLot.name }}</h3>
+              <div class="header-left">
+                <div class="title-row">
+                  <h3 class="venue-name">{{ order.parkingLot.name }}</h3>
+                  <span class="service-type" :class="order.serviceType">
+                    {{ getServiceTypeText(order.serviceType) }}
+                  </span>
+                </div>
+              </div>
               <div class="status-badge" :class="getStatusType(order.status)">
                 {{ getStatusText(order.status) }}
               </div>
@@ -90,20 +105,22 @@
                 </template>
               </div>
               
-              <!-- Duration or reservation time -->
-              <div class="duration-row" v-if="isReservation(order) || order.duration">
-                <van-icon name="underway-o" />
-                <span v-if="isReservation(order)" class="reservation">
-                  Reserved {{ getReservationDuration(order) }}
+              <!-- Duration or reservation info -->
+              <div class="duration-row" v-if="isReservation(order)">
+                <van-icon 
+                  :name="getReservationIcon(order)" 
+                  :class="getReservationIconClass(order)"
+                />
+                <span :class="getReservationTextClass(order)">
+                  {{ getReservationText(order) }}
                 </span>
-                <span v-else class="duration">{{ order.duration }}</span>
               </div>
 
               <!-- Divider -->
               <div class="info-divider"></div>
 
               <!-- Spot info -->
-              <div class="spot-info">
+              <div class="spot-info" v-if="shouldShowSpotInfo(order)">
                 <div class="spot-row">
                   <van-icon name="location" />
                   <span class="spot-text">
@@ -155,17 +172,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { showToast } from 'vant';
 import type { Order } from '@/types/orders';
 import { formatTime } from '@/utils/format';
+import { getStatusType, getStatusText, getStatusHint } from '@/types/orderStatus';
 
 // Status management
 const router = useRouter();
+const route = useRoute();
 const searchText = ref('');
 const status = ref('all');
-const activeTab = ref('standard');
+const activeTab = ref('all');
 const loading = ref(false);
 const finished = ref(false);
 const refreshing = ref(false);
@@ -207,11 +226,21 @@ type ParkingStatus =
   | 'RefundFailed'
   | 'Overtime';
 
+type DockStatus = 
+  | 'Requested'      // 已申请
+  | 'Scheduled'      // 已预约
+  | 'Arrived'        // 已到达
+  | 'InProgress'     // 装卸中
+  | 'LoadingCompleted' // 装卸完成
+  | 'PaymentPending'   // 待支付
+  | 'Completed'      // 已完成
+  | 'Cancelled';     // 已取消
+
 // Filtered order list
 const displayOrders = computed(() => {
   return orders.value.filter((order: Order) => {
-    // Service type filter
-    if (order.serviceType !== activeTab.value) {
+    // Service type filter (只在非 all 模式下过滤)
+    if (activeTab.value !== 'all' && order.serviceType !== activeTab.value) {
       return false;
     }
 
@@ -235,44 +264,6 @@ const displayOrders = computed(() => {
   });
 });
 
-// Get status corresponding style type
-function getStatusType(status: ValetStatus | ParkingStatus) {
-  const warningStatuses = ['PendingPayment', 'Reserved', 'Requested', 'OnTheWay', 'Overtime'];
-  const successStatuses = ['Completed', 'Closed', 'Paid', 'Refunded'];
-  const dangerStatuses = ['PaymentFailed', 'Cancelled', 'Expired', 'RefundFailed'];
-  const primaryStatuses = ['InUse', 'Parked', 'CheckedIn', 'Ready'];
-
-  if (warningStatuses.includes(status)) return 'warning';
-  if (successStatuses.includes(status)) return 'success';
-  if (dangerStatuses.includes(status)) return 'danger';
-  if (primaryStatuses.includes(status)) return 'primary';
-  return 'default';
-}
-
-// Get status text
-function getStatusText(status: ValetStatus | ParkingStatus) {
-  return status.replace(/([A-Z])/g, ' $1').trim();
-}
-
-// Get status hint text
-function getStatusHint(status: ValetStatus | ParkingStatus) {
-  const hints: Record<string, string> = {
-    PendingPayment: 'Waiting for payment',
-    PaymentFailed: 'Payment failed, please try again',
-    AwaitingUse: 'Ready to use',
-    InUse: 'Currently in use',
-    Overtime: 'Additional fee required',
-    RefundRequested: 'Processing refund request',
-    Reserved: 'Valet spot reserved',
-    CheckedIn: 'Vehicle checked in',
-    Parked: 'Vehicle safely parked',
-    Requested: 'Pickup requested',
-    OnTheWay: 'Vehicle being retrieved',
-    Ready: 'Vehicle ready for pickup'
-  };
-  return hints[status] || '';
-}
-
 // Search
 function onSearch() {
   orders.value = []; // Clear list
@@ -283,51 +274,135 @@ function onSearch() {
 // Load data
 function onLoad() {
   setTimeout(() => {
-    const parkingStatuses: ParkingStatus[] = [
-      'PendingPayment', 'AwaitingUse', 'InUse', 'Used', 'Completed',
-      'PaymentFailed', 'Cancelled', 'Expired', 'RefundRequested',
-      'ProcessingRefund', 'Refunded', 'RefundFailed', 'Overtime'
+    // 按业务流程顺序定义状态
+    const valetStatuses: ValetStatus[] = [
+      'Reserved',    // 已预订
+      'CheckedIn',   // 已入场
+      'Pending',     // 处理中
+      'Parked',      // 已停放
+      'Requested',   // 请求取车
+      'OnTheWay',    // 取车中
+      'Ready',       // 就绪
+      'Paid',        // 已支付
+      'Closed'       // 已完成
     ];
     
-    const valetStatuses: ValetStatus[] = [
-      'Reserved', 'CheckedIn', 'Pending', 'Parked',
-      'Requested', 'OnTheWay', 'Ready', 'Paid', 'Closed'
+    const parkingStatuses: ParkingStatus[] = [
+      'PendingPayment',   // 待支付
+      'AwaitingUse',      // 待使用
+      'InUse',            // 使用中
+      'Used',             // 已使用
+      'Cancelled',        // 已取消
+      'Refunded',         // 已退款
+      'Expired',          // 已过期
+      'PaymentFailed',    // 支付失败
+      'RefundFailed',     // 退款失败
+      'RefundRequested',  // 申请退款
+      'ProcessingRefund', // 退款处理中
+      'Overtime'          // 超时
     ];
 
-    const newOrders = Array(10).fill(null).map((_, index) => {
-      const isValet = activeTab.value === 'valet';
-      const statusList = isValet ? valetStatuses : parkingStatuses;
+    const dockStatuses: DockStatus[] = [
+      'Requested',       // 已申请
+      'Scheduled',       // 已预约
+      'Arrived',         // 已到达
+      'InProgress',      // 装卸中
+      'LoadingCompleted',// 装卸完成
+      'PaymentPending',  // 待支付
+      'Completed',       // 已完成
+      'Cancelled'        // 已取消
+    ];
+
+    const orderCount = 10;
+    const newOrders = [];
+
+    // 根据当前选中的 tab 生成对应状态的订单
+    if (activeTab.value === 'all') {
+      // 在 all 模式下，为每种类型生成一些订单
+      ['valet', 'parking', 'dock'].forEach(type => {
+        const statusList = type === 'valet' ? valetStatuses : 
+                         type === 'parking' ? parkingStatuses : 
+                         dockStatuses;
+        
+        // 为每个状态生成一个订单
+        statusList.forEach((status, index) => {
+          newOrders.push(generateOrder(type, status, index));
+        });
+      });
+    } else {
+      // 在特定 tab 下，按状态顺序生成订单
+      const statusList = activeTab.value === 'valet' ? valetStatuses :
+                        activeTab.value === 'parking' ? parkingStatuses :
+                        dockStatuses;
       
-      return {
-        id: orders.value.length + index + 1,
-        orderNo: Math.random().toString(36).substr(2, 8).toUpperCase(),
-        status: statusList[Math.floor(Math.random() * statusList.length)],
-        parkingLot: {
-          id: 1,
-          name: 'Central Parking',
-          address: '123 Main St, City'
-        },
-        startTime: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
-        vehicles: [{ licensePlate: `ABC${Math.floor(Math.random() * 1000)}` }],
-        serviceType: isValet ? 'valet' : 'standard',
-        totalAmount: Math.floor(Math.random() * 100) + 10,
-        createdAt: new Date().toISOString()
-      };
-    });
+      // 为每个状态生成一个订单
+      statusList.forEach((status, index) => {
+        newOrders.push(generateOrder(activeTab.value, status, index));
+      });
+    }
 
     orders.value.push(...newOrders);
     loading.value = false;
-    
-    if (orders.value.length >= 40) {
-      finished.value = true;
-    }
+    finished.value = true; // 因为我们已经生成了所有状态的订单
   }, 1000);
+}
+
+// 生成单个订单的辅助函数
+function generateOrder(serviceType: string, status: string, index: number) {
+  const now = new Date();
+  let startTime = new Date();
+
+  // 根据不同业务类型和状态设置时间
+  const futureStatuses = {
+    valet: ['Reserved'],
+    parking: ['AwaitingUse', 'PendingPayment'],
+    dock: ['Requested', 'Scheduled']
+  };
+
+  if (futureStatuses[serviceType as keyof typeof futureStatuses]?.includes(status)) {
+    // 未来的预订时间，根据状态设置不同的时间范围
+    const daysAhead = status === 'Scheduled' ? 3 : 1; // Scheduled 状态预订时间更长
+    startTime = new Date(now.getTime() + (Math.random() * daysAhead * 24 * 60 * 60 * 1000));
+  } else {
+    // 过去的时间，时间跨度根据状态调整
+    startTime = new Date(now.getTime() - (index * 24 * 60 * 60 * 1000));
+  }
+
+  // 根据业务类型和状态设置车位信息
+  const spotInfo = {
+    area: serviceType === 'dock' ? 'D' : 'A',
+    spotNo: serviceType === 'dock' ? 
+      (shouldShowDockSpot(status) ? `D${String(index + 1).padStart(3, '0')}` : undefined) :
+      `${String(index + 1).padStart(3, '0')}`
+  };
+
+  return {
+    id: orders.value.length + index + 1,
+    orderNo: `${serviceType.toUpperCase()}${String(Date.now()).slice(-6)}${index}`,
+    status,
+    parkingLot: {
+      id: 1,
+      name: getDockStationName(serviceType),
+      address: getDockAddress(serviceType),
+      area: spotInfo.area
+    },
+    startTime: startTime.toISOString(),
+    vehicles: [{ 
+      licensePlate: `${serviceType === 'dock' ? 'TRUCK' : 'ABC'}${String(index + 1).padStart(3, '0')}` 
+    }],
+    serviceType,
+    totalAmount: 30 + (index * 5), // 金额随状态递增
+    createdAt: new Date().toISOString(),
+    spotNo: spotInfo.spotNo
+  };
 }
 
 // Refresh
 function onRefresh() {
   finished.value = false;
   orders.value = [];
+  status.value = 'all'; // 重置状态筛选
+  resetExpandState(); // 重置展开状态
   onLoad();
   refreshing.value = false;
 }
@@ -339,10 +414,15 @@ function showOrderDetail(order: Order) {
 
 // Get order counts for different types
 function getOrderCount(type: string) {
-  if (type === 'all') {
-    return mockOrders.valet.length + mockOrders.parking.length;
+  if (!orders.value.length) {
+    return 0;
   }
-  return mockOrders[type as keyof typeof mockOrders]?.length || 0;
+  
+  if (type === 'all') {
+    return orders.value.length;
+  }
+  
+  return orders.value.filter(order => order.serviceType === type).length;
 }
 
 const showFilter = ref(false);
@@ -361,7 +441,24 @@ function selectStatus(value: string) {
 function isReservation(order: Order) {
   const now = new Date();
   const startTime = new Date(order.startTime);
-  return startTime > now;
+  const endTime = new Date(order.endTime || order.startTime);
+  
+  // 根据不同业务类型判断预订状态
+  const reservationStatusMap = {
+    valet: ['Reserved', 'Parked'],                    // 代客泊车 - 已预订状态和停放中
+    parking: ['AwaitingUse', 'PendingPayment', 'Overtime', 'InUse'], // 自助停车 - 添加使用中状态
+    dock: ['Scheduled', 'InProgress']                 // 装卸货 - 添加进行中状态
+  };
+
+  const statusList = reservationStatusMap[order.serviceType as keyof typeof reservationStatusMap] || [];
+  
+  // 对于使用中的状态，只在接近结束时显示提示
+  if (['InUse', 'Parked', 'InProgress'].includes(order.status)) {
+    const minutesToEnd = Math.floor((endTime.getTime() - now.getTime()) / (1000 * 60));
+    return minutesToEnd <= 30; // 只在剩余30分钟内显示提示
+  }
+
+  return statusList.includes(order.status);
 }
 
 // Get reservation duration
@@ -408,372 +505,243 @@ function getOvertimeDuration(order: Order) {
   }
 }
 
-const mockOrders = {
-  valet: [
-    {
-      id: 'v1',
-      orderNo: 'VLT20240301001',
-      serviceType: 'valet',
-      status: 'Reserved',
-      startTime: '2024-03-12T14:30:00',
-      vehicles: [{ licensePlate: 'CA 12345' }],
-      totalAmount: 35.00,
-      parkingLot: {
-        name: 'Downtown Valet Parking',
-        address: '123 Main St, LA',
-        area: 'A'
-      },
-      spotNo: '1001'
-    },
-    {
-      id: 'v2',
-      orderNo: 'VLT20240301002',
-      serviceType: 'valet',
-      status: 'CheckedIn',
-      startTime: '2024-03-12T10:30:00',
-      vehicles: [{ licensePlate: 'CA 67890' }],
-      totalAmount: 25.00,
-      parkingLot: {
-        name: 'Luxury Hotel Valet',
-        address: '456 Park Ave, LA',
-        area: 'B'
-      },
-      spotNo: '2001'
-    },
-    {
-      id: 'v3',
-      orderNo: 'VLT20240301003',
-      serviceType: 'valet',
-      status: 'Pending',
-      startTime: '2024-03-12T09:00:00',
-      vehicles: [{ licensePlate: 'CA 11111' }],
-      totalAmount: 30.00,
-      parkingLot: {
-        name: 'Premium Valet Service',
-        address: '789 Elite St, LA',
-        area: 'C'
-      },
-      spotNo: '3001'
-    },
-    {
-      id: 'v4',
-      orderNo: 'VLT20240301004',
-      serviceType: 'valet',
-      status: 'Parked',
-      startTime: '2024-03-12T08:30:00',
-      vehicles: [{ licensePlate: 'CA 22222' }],
-      totalAmount: 40.00,
-      parkingLot: {
-        name: 'Grand Hotel Valet',
-        address: '321 Luxury Blvd, LA',
-        area: 'D'
-      },
-      spotNo: '4001'
-    },
-    {
-      id: 'v5',
-      orderNo: 'VLT20240301005',
-      serviceType: 'valet',
-      status: 'Requested',
-      startTime: '2024-03-12T07:30:00',
-      vehicles: [{ licensePlate: 'CA 33333' }],
-      totalAmount: 45.00,
-      parkingLot: {
-        name: 'Plaza Valet Service',
-        address: '555 Plaza Dr, LA',
-        area: 'E'
-      },
-      spotNo: '5001'
-    },
-    {
-      id: 'v6',
-      orderNo: 'VLT20240301006',
-      serviceType: 'valet',
-      status: 'OnTheWay',
-      startTime: '2024-03-12T07:00:00',
-      vehicles: [{ licensePlate: 'CA 44444' }],
-      totalAmount: 50.00,
-      parkingLot: {
-        name: 'Executive Valet',
-        address: '777 Business St, LA',
-        area: 'F'
-      },
-      spotNo: '6001'
-    },
-    {
-      id: 'v7',
-      orderNo: 'VLT20240301007',
-      serviceType: 'valet',
-      status: 'Ready',
-      startTime: '2024-03-12T06:30:00',
-      vehicles: [{ licensePlate: 'CA 55555' }],
-      totalAmount: 55.00,
-      parkingLot: {
-        name: 'VIP Valet Service',
-        address: '888 VIP Way, LA',
-        area: 'G'
-      },
-      spotNo: '7001'
-    },
-    {
-      id: 'v8',
-      orderNo: 'VLT20240301008',
-      serviceType: 'valet',
-      status: 'Paid',
-      startTime: '2024-03-12T06:00:00',
-      endTime: '2024-03-12T10:00:00',
-      vehicles: [{ licensePlate: 'CA 66666' }],
-      totalAmount: 60.00,
-      parkingLot: {
-        name: 'Elite Valet Parking',
-        address: '999 Elite Ave, LA',
-        area: 'H'
-      },
-      spotNo: '8001'
-    },
-    {
-      id: 'v9',
-      orderNo: 'VLT20240301009',
-      serviceType: 'valet',
-      status: 'Closed',
-      startTime: '2024-03-12T05:30:00',
-      endTime: '2024-03-12T09:30:00',
-      vehicles: [{ licensePlate: 'CA 77777' }],
-      totalAmount: 65.00,
-      parkingLot: {
-        name: 'Luxury Valet Service',
-        address: '111 Luxury Lane, LA',
-        area: 'I'
-      },
-      spotNo: '9001'
-    }
-  ],
-  parking: [
-    {
-      id: 'p1',
-      orderNo: 'PRK20240301001',
-      serviceType: 'parking',
-      status: 'PendingPayment',
-      startTime: '2024-03-12T14:30:00',
-      vehicles: [{ licensePlate: 'CA 88888' }],
-      totalAmount: 15.00,
-      parkingLot: {
-        name: 'Central Parking',
-        address: '123 Main St, LA',
-        area: 'A'
-      },
-      spotNo: '101'
-    },
-    {
-      id: 'p2',
-      orderNo: 'PRK20240301002',
-      serviceType: 'parking',
-      status: 'AwaitingUse',
-      startTime: '2024-03-12T15:00:00',
-      vehicles: [{ licensePlate: 'CA 99999' }],
-      totalAmount: 20.00,
-      parkingLot: {
-        name: 'Downtown Parking',
-        address: '456 Center St, LA',
-        area: 'B'
-      },
-      spotNo: '102'
-    },
-    {
-      id: 'p3',
-      orderNo: 'PRK20240301003',
-      serviceType: 'parking',
-      status: 'InUse',
-      startTime: '2024-03-12T08:00:00',
-      vehicles: [{ licensePlate: 'CA 11122' }],
-      totalAmount: 25.00,
-      parkingLot: {
-        name: 'City Plaza Parking',
-        address: '789 Plaza Dr, LA',
-        area: 'C'
-      },
-      spotNo: '103'
-    },
-    {
-      id: 'p4',
-      orderNo: 'PRK20240301004',
-      serviceType: 'parking',
-      status: 'Used',
-      startTime: '2024-03-12T07:00:00',
-      endTime: '2024-03-12T12:00:00',
-      vehicles: [{ licensePlate: 'CA 22233' }],
-      totalAmount: 30.00,
-      parkingLot: {
-        name: 'Metro Parking',
-        address: '321 Metro St, LA',
-        area: 'D'
-      },
-      spotNo: '104'
-    },
-    {
-      id: 'p5',
-      orderNo: 'PRK20240301005',
-      serviceType: 'parking',
-      status: 'Completed',
-      startTime: '2024-03-11T14:00:00',
-      endTime: '2024-03-11T18:00:00',
-      vehicles: [{ licensePlate: 'CA 33344' }],
-      totalAmount: 35.00,
-      parkingLot: {
-        name: 'Station Parking',
-        address: '654 Station Ave, LA',
-        area: 'E'
-      },
-      spotNo: '105'
-    },
-    {
-      id: 'p6',
-      orderNo: 'PRK20240301006',
-      serviceType: 'parking',
-      status: 'PaymentFailed',
-      startTime: '2024-03-12T16:00:00',
-      vehicles: [{ licensePlate: 'CA 44455' }],
-      totalAmount: 40.00,
-      parkingLot: {
-        name: 'West Parking',
-        address: '987 West St, LA',
-        area: 'F'
-      },
-      spotNo: '106'
-    },
-    {
-      id: 'p7',
-      orderNo: 'PRK20240301007',
-      serviceType: 'parking',
-      status: 'Cancelled',
-      startTime: '2024-03-12T16:30:00',
-      vehicles: [{ licensePlate: 'CA 55566' }],
-      totalAmount: 45.00,
-      parkingLot: {
-        name: 'East Parking',
-        address: '654 East Ave, LA',
-        area: 'G'
-      },
-      spotNo: '107'
-    },
-    {
-      id: 'p8',
-      orderNo: 'PRK20240301008',
-      serviceType: 'parking',
-      status: 'Expired',
-      startTime: '2024-03-11T10:00:00',
-      vehicles: [{ licensePlate: 'CA 66677' }],
-      totalAmount: 50.00,
-      parkingLot: {
-        name: 'North Parking',
-        address: '321 North Blvd, LA',
-        area: 'H'
-      },
-      spotNo: '108'
-    },
-    {
-      id: 'p9',
-      orderNo: 'PRK20240301009',
-      serviceType: 'parking',
-      status: 'RefundRequested',
-      startTime: '2024-03-12T17:00:00',
-      vehicles: [{ licensePlate: 'CA 77788' }],
-      totalAmount: 55.00,
-      parkingLot: {
-        name: 'South Parking',
-        address: '123 South St, LA',
-        area: 'I'
-      },
-      spotNo: '109'
-    },
-    {
-      id: 'p10',
-      orderNo: 'PRK20240301010',
-      serviceType: 'parking',
-      status: 'ProcessingRefund',
-      startTime: '2024-03-12T17:30:00',
-      vehicles: [{ licensePlate: 'CA 88899' }],
-      totalAmount: 60.00,
-      parkingLot: {
-        name: 'Central Square Parking',
-        address: '456 Square Ave, LA',
-        area: 'J'
-      },
-      spotNo: '110'
-    },
-    {
-      id: 'p11',
-      orderNo: 'PRK20240301011',
-      serviceType: 'parking',
-      status: 'Refunded',
-      startTime: '2024-03-12T18:00:00',
-      vehicles: [{ licensePlate: 'CA 99900' }],
-      totalAmount: 65.00,
-      parkingLot: {
-        name: 'Plaza Square Parking',
-        address: '789 Plaza Square, LA',
-        area: 'K'
-      },
-      spotNo: '111'
-    },
-    {
-      id: 'p12',
-      orderNo: 'PRK20240301012',
-      serviceType: 'parking',
-      status: 'RefundFailed',
-      startTime: '2024-03-12T18:30:00',
-      vehicles: [{ licensePlate: 'CA 00011' }],
-      totalAmount: 70.00,
-      parkingLot: {
-        name: 'City Center Parking',
-        address: '321 Center Plaza, LA',
-        area: 'L'
-      },
-      spotNo: '112'
-    },
-    {
-      id: 'p13',
-      orderNo: 'PRK20240301013',
-      serviceType: 'parking',
-      status: 'Overtime',
-      startTime: '2024-03-12T07:00:00',
-      endTime: '2024-03-12T12:00:00',
-      vehicles: [{ licensePlate: 'CA 11223' }],
-      totalAmount: 75.00,
-      parkingLot: {
-        name: 'Metro Center Parking',
-        address: '654 Metro Center, LA',
-        area: 'M'
-      },
-      spotNo: '113'
-    }
-  ]
-};
+// 添加初始化函数
+function initializeData() {
+  loading.value = true;
+  finished.value = false;
+  onLoad();
+}
 
-// Modify activeTab's watch or click handler
-function handleTabChange(tab: string) {
-  activeTab.value = tab;
-  if (tab === 'all') {
-    orders.value = [...mockOrders.valet, ...mockOrders.parking];
-  } else {
-    orders.value = mockOrders[tab as keyof typeof mockOrders] || [];
+// 在组件挂载时加载数据
+onMounted(() => {
+  // 从路由参数中获取 activeTab
+  const tabFromRoute = route.query.activeTab;
+  if (tabFromRoute && typeof tabFromRoute === 'string') {
+    // 确保是有效的 tab 值
+    const validTabs = ['all', 'valet', 'parking', 'dock'];
+    if (validTabs.includes(tabFromRoute)) {
+      activeTab.value = tabFromRoute;
+      // 立即根据新的 tab 值更新数据
+      orders.value = [];
+      loading.value = true;
+      onLoad();
+    }
   }
-  // Reset list state
-  finished.value = true;
-  loading.value = false;
+  
+  // 初始化数据
+  initializeData();
+});
+
+// 修改 handleTabChange 函数
+function handleTabChange(tab: string) {
+  if (tab === activeTab.value) return;
+  
+  activeTab.value = tab;
+  status.value = 'all';
+  orders.value = [];
+  resetExpandState();
+  loading.value = true;
+  finished.value = false;
+  
+  // 更新路由参数但不触发新的导航
+  router.replace({
+    query: {
+      ...route.query,
+      activeTab: tab
+    }
+  });
+  
+  onLoad();
 }
 
 // Navigate to order details
-function goToDetail(orderId: string) {
+function goToDetail(orderId: string | number) {
   const currentOrder = orders.value.find(order => order.id === orderId);
   if (currentOrder) {
-    // Use query to pass order data
     router.push({
-      name: 'ParkingOrderDetail',
-      params: { id: orderId },
-      query: { data: JSON.stringify(currentOrder) }
+      name: 'OrderDetail',
+      params: { id: String(orderId) },
+      query: {
+        type: currentOrder.serviceType,
+        status: currentOrder.status,
+        data: JSON.stringify(currentOrder),
+        activeTab: activeTab.value
+      }
     });
   }
+}
+
+// 添加获取服务类型文本的函数
+function getServiceTypeText(type: string) {
+  const typeMap: Record<string, string> = {
+    valet: 'Valet',
+    parking: 'Parking',
+    dock: 'Dock'
+  };
+  return typeMap[type] || type;
+}
+
+// 添加获取停车场名称的辅助函数
+function getDockStationName(serviceType: string) {
+  if (serviceType === 'dock') {
+    const stations = [
+      'Cargo Terminal A',
+      'Loading Dock B',
+      'Freight Station C',
+      'Distribution Center',
+      'Logistics Hub'
+    ];
+    return stations[Math.floor(Math.random() * stations.length)];
+  }
+  return 'Central Parking';
+}
+
+// 添加获取地址的辅助函数
+function getDockAddress(serviceType: string) {
+  if (serviceType === 'dock') {
+    const addresses = [
+      '789 Port Ave, Industrial Zone',
+      '456 Logistics Blvd, Warehouse District',
+      '123 Freight St, Commerce Park',
+      '321 Terminal Rd, Port Area',
+      '654 Dock Way, Industrial Park'
+    ];
+    return addresses[Math.floor(Math.random() * addresses.length)];
+  }
+  return '123 Main St, City';
+}
+
+// 添加切换展开/收起的函数
+function toggleExpand(order: any) {
+  order.isExpanded = !order.isExpanded;
+}
+
+// 在切换 tab 或刷新时重置展开状态
+function resetExpandState() {
+  orders.value.forEach(order => {
+    order.isExpanded = false;
+  });
+}
+
+// 修改获取预订文本的函数
+function getReservationText(order: Order) {
+  const now = new Date();
+  const startTime = new Date(order.startTime);
+  const endTime = new Date(order.endTime || order.startTime);
+  const hours = Math.ceil((startTime.getTime() - now.getTime()) / (1000 * 60 * 60));
+  const timeText = hours < 24 ? `${hours}h` : `${Math.ceil(hours / 24)}d`;
+  
+  // 计算距离结束的时间（分钟）
+  const minutesToEnd = Math.floor((endTime.getTime() - now.getTime()) / (1000 * 60));
+
+  const textMap = {
+    valet: {
+      Reserved: `Valet service in ${timeText}`,
+      Parked: minutesToEnd <= 30 ? 'Please extend your valet service if needed' : undefined
+    },
+    parking: {
+      AwaitingUse: `Parking starts in ${timeText}`,
+      PendingPayment: 'Complete payment in 15min',
+      Overtime: 'Please pay immediately to avoid legal liability',
+      InUse: minutesToEnd <= 30 ? 'Please extend your parking time if needed' : undefined
+    },
+    dock: {
+      Scheduled: `Loading service starts in ${timeText}`,
+      InProgress: minutesToEnd <= 30 ? 'Please extend your loading service if needed' : undefined
+    }
+  };
+
+  // 如果是使用中且接近结束时间，显示续订提示
+  if (minutesToEnd <= 30 && ['InUse', 'Parked', 'InProgress'].includes(order.status)) {
+    return textMap[order.serviceType]?.[order.status] || `${minutesToEnd}min left, extend if needed`;
+  }
+
+  return textMap[order.serviceType]?.[order.status] || `Reserved in ${timeText}`;
+}
+
+// 添加获取预订图标的函数
+function getReservationIcon(order: Order) {
+  // 待支付状态
+  if (order.status === 'PendingPayment') {
+    return 'cash-o';
+  }
+  
+  // 超时状态
+  if (order.status === 'Overtime') {
+    return 'warning-o';
+  }
+  
+  // 使用中且接近结束时间
+  const endTime = new Date(order.endTime || order.startTime);
+  const now = new Date();
+  const minutesToEnd = Math.floor((endTime.getTime() - now.getTime()) / (1000 * 60));
+  if (['InUse', 'Parked', 'InProgress'].includes(order.status) && minutesToEnd <= 30) {
+    return 'warning-o';
+  }
+  
+  // 预订状态
+  if (['Reserved', 'AwaitingUse', 'Scheduled'].includes(order.status)) {
+    return 'underway-o';
+  }
+  
+  return 'info-o';
+}
+
+// 添加获取图标样式的函数
+function getReservationIconClass(order: Order) {
+  return {
+    'warning-icon': order.status === 'Overtime' || order.status === 'PendingPayment',
+    'alert-icon': ['InUse', 'Parked', 'InProgress'].includes(order.status),
+    'info-icon': ['Reserved', 'AwaitingUse', 'Scheduled'].includes(order.status)
+  };
+}
+
+// 添加获取文本样式的函数
+function getReservationTextClass(order: Order) {
+  return {
+    'warning-text': order.status === 'Overtime' || order.status === 'PendingPayment',
+    'alert-text': ['InUse', 'Parked', 'InProgress'].includes(order.status),
+    'reservation': ['Reserved', 'AwaitingUse', 'Scheduled'].includes(order.status)
+  };
+}
+
+// 修改判断是否显示车位信息的函数
+function shouldShowSpotInfo(order: Order) {
+  // dock 业务特殊处理
+  if (order.serviceType === 'dock') {
+    // 只有在 Arrived 状态之后才显示车位信息
+    const dockStatusOrder = [
+      'Requested',      // 不显示
+      'Scheduled',      // 不显示
+      'Arrived',        // 开始显示
+      'InProgress',
+      'LoadingCompleted',
+      'PaymentPending',
+      'Completed',
+      'Cancelled'       // 即使取消也显示历史车位
+    ];
+    
+    const currentStatusIndex = dockStatusOrder.indexOf(order.status);
+    const arrivedIndex = dockStatusOrder.indexOf('Arrived');
+    
+    return currentStatusIndex >= arrivedIndex;
+  }
+  
+  // 其他业务类型都显示车位信息
+  return true;
+}
+
+// 修改判断是否显示 dock 车位的辅助函数
+function shouldShowDockSpot(status: string) {
+  const showSpotStatuses = [
+    'Arrived',          // 从 Arrived 状态开始显示
+    'InProgress',
+    'LoadingCompleted',
+    'PaymentPending',
+    'Completed',
+    'Cancelled'
+  ];
+  return showSpotStatuses.includes(status);
 }
 </script>
 
@@ -884,8 +852,8 @@ function goToDetail(orderId: string) {
 .tab {
   flex: 1;
   text-align: center;
-  padding: 10px;
-  font-size: 15px;
+  padding: 8px 4px;
+  font-size: 14px;
   color: #666;
   cursor: pointer;
   border-radius: 8px;
@@ -893,7 +861,7 @@ function goToDetail(orderId: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .tab.active {
@@ -903,11 +871,11 @@ function goToDetail(orderId: string) {
 }
 
 .count {
-  font-size: 12px;
+  font-size: 11px;
   background: rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 20px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  min-width: 16px;
 }
 
 .tab.active .count {
@@ -927,26 +895,59 @@ function goToDetail(orderId: string) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  gap: 12px;
 }
 
-.card-header h3 {
+.header-left {
+  flex: 1;
+  min-width: 0; /* 允许子元素收缩 */
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.venue-name {
   font-size: 18px;
   font-weight: 500;
   color: #fff;
   margin: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.service-type {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .status-badge {
+  flex-shrink: 0;
   font-size: 13px;
   font-weight: 500;
   padding: 4px 12px;
   border-radius: 20px;
+  white-space: nowrap;
 }
 
-.status-badge.primary { background: #4361ee; color: #fff; }
+.status-badge.pending { background: #9c27b0; color: #fff; }
 .status-badge.warning { background: #ff9f1c; color: #fff; }
+.status-badge.primary { background: #4361ee; color: #fff; }
 .status-badge.success { background: #2ec4b6; color: #fff; }
 .status-badge.danger { background: #e71d36; color: #fff; }
+.status-badge.processing { background: #5e35b1; color: #fff; }
+.status-badge.default { background: #666; color: #fff; }
 
 .location-info {
   display: flex;
@@ -996,11 +997,33 @@ function goToDetail(orderId: string) {
 }
 
 .duration-row .van-icon {
-  color: #666;
+  font-size: 16px;
+}
+
+.warning-icon {
+  color: #e71d36; /* 红色 - 警告 */
+}
+
+.alert-icon {
+  color: #ff9f1c; /* 橙色 - 提醒 */
+}
+
+.info-icon {
+  color: #4361ee; /* 蓝色 - 信息 */
+}
+
+.warning-text {
+  color: #e71d36;
+  font-weight: 500;
+}
+
+.alert-text {
+  color: #ff9f1c;
+  font-weight: 500;
 }
 
 .reservation {
-  color: #ff9f1c;
+  color: #4361ee;
   font-weight: 500;
 }
 
@@ -1109,5 +1132,81 @@ function goToDetail(orderId: string) {
 /* Status hint related styles */
 .status-hint {
   display: none;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.service-type {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.service-type.valet {
+  background: rgba(124, 77, 255, 0.15);
+  color: #7c4dff;
+}
+
+.service-type.parking {
+  background: rgba(46, 196, 182, 0.15);
+  color: #2ec4b6;
+}
+
+.service-type.dock {
+  background: rgba(255, 159, 28, 0.15);
+  color: #ff9f1c;
+}
+
+/* 修改原有的 card-header 样式 */
+.card-header h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+}
+
+.venue-name {
+  font-size: 18px;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.venue-name.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.venue-name-tooltip {
+  max-width: 300px;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #fff;
+  background: #333;
+  border-radius: 4px;
+  word-break: break-word;
+}
+
+/* 自定义 Popover 样式 */
+:deep(.van-popover) {
+  --van-popover-action-width: auto;
+  --van-popover-action-height: auto;
+  --van-popover-light-text-color: #fff;
+  --van-popover-light-background: #333;
+}
+
+/* 添加悬停效果 */
+.venue-name:hover {
+  opacity: 0.8;
 }
 </style> 

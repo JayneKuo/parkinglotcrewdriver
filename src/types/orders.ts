@@ -1,8 +1,10 @@
-export enum ServiceType {
-  Parking = 'parking',  // 自助停车
-  Valet = 'valet',     // 代客泊车
-  Dock = 'dock'        // 装卸货
-}
+export const ServiceType = {
+  Parking: 'parking' as const,
+  Valet: 'valet' as const,
+  Dock: 'dock' as const
+};
+
+export type ServiceType = typeof ServiceType[keyof typeof ServiceType];
 
 export enum OrderStatus {
   // 支付相关状态
@@ -31,7 +33,13 @@ export enum OrderStatus {
   // 退款相关状态
   RefundRequested = 'RefundRequested',   // 退款申请中
   RefundRejected = 'RefundRejected',     // 退款被拒绝
-  Refunded = 'Refunded'                  // 已退款
+  Refunded = 'Refunded',                  // 已退款
+  
+  // 其他状态
+  Scheduled = 'Scheduled',
+  Arrived = 'Arrived',
+  InProgress = 'InProgress',
+  LoadingCompleted = 'LoadingCompleted'
 }
 
 export const OrderStatusConfig: Record<OrderStatus, {
@@ -144,6 +152,28 @@ export const OrderStatusConfig: Record<OrderStatus, {
   [OrderStatus.Refunded]: {
     text: 'Refunded',
     type: 'success'
+  },
+
+  // 其他状态
+  [OrderStatus.Scheduled]: {
+    text: 'Scheduled',
+    type: 'primary',
+    hint: 'Vehicle scheduled for pickup'
+  },
+  [OrderStatus.Arrived]: {
+    text: 'Arrived',
+    type: 'success',
+    hint: 'Vehicle arrived at pickup location'
+  },
+  [OrderStatus.InProgress]: {
+    text: 'In Progress',
+    type: 'warning',
+    hint: 'Vehicle pickup in progress'
+  },
+  [OrderStatus.LoadingCompleted]: {
+    text: 'Loading Completed',
+    type: 'success',
+    hint: 'Vehicle pickup completed'
   }
 };
 
@@ -206,15 +236,128 @@ export const OrderActionConfig: Record<string, {
     text: 'Confirm Pickup',
     type: 'primary',
     handler: 'handleConfirmPickup'
+  },
+  'modify-request': {
+    text: 'Modify Request',
+    type: 'primary',
+    handler: 'handleModifyRequest'
+  },
+  'cancel-request': {
+    text: 'Cancel Request',
+    type: 'default',
+    handler: 'handleCancelRequest'
+  },
+  'modify-appointment': {
+    text: 'Modify Appointment',
+    type: 'primary',
+    handler: 'handleModifyAppointment'
+  },
+  'cancel-appointment': {
+    text: 'Cancel Appointment',
+    type: 'default',
+    handler: 'handleCancelAppointment'
   }
 };
 
 export interface OrderBase {
-  id: string;
+  id: string | number;
   orderNo: string;
   status: OrderStatus;
   serviceType: ServiceType;
   createdAt: string;
+  startTime: string;
+  endTime?: string;
+  totalAmount: number;
+  spotNo?: string;
+  customer?: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  parkingLot: {
+    id: number;
+    name: string;
+    address: string;
+    area: string;
+  };
+  vehicles: Array<{
+    licensePlate: string;
+    brand?: string;
+    model?: string;
+    color?: string;
+  }>;
+  payment: {
+    method: string;
+    time: string;
+    transactionId: string;
+    status: string;
+    amount: number;
+  };
+  pricing?: {
+    parkingFee?: number;
+    serviceFee?: number;
+    tax?: number;
+    totalAmount: number;
+  };
+  checkInTime?: string;
+  checkOutTime?: string;
+}
+
+export interface ParkingOrder extends OrderBase {
+  serviceType: ServiceType.Parking;
+  spotType?: string;
+  reservedStartTime?: string;
+  reservedEndTime?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+}
+
+export interface ValetOrder extends OrderBase {
+  serviceType: ServiceType.Valet;
+  valetInfo?: {
+    valetId?: string;
+    valetName?: string;
+    pickupLocation?: string;
+    returnLocation?: string;
+    notes?: string;
+  };
+}
+
+export interface DockOrder extends OrderBase {
+  serviceType: 'dock';
+  status: OrderStatus;
+  loadType: string;
+  rateType: string;
+  spotCount: number;
+  duration: string;
+  driver: {
+    name: string;
+    phone: string;
+    carrier: string;
+  };
+  cargo?: {
+    type: string;
+    poNumber: string;
+    weight: string;
+    quantity: number;
+    description?: string;
+  };
+  checkInTime?: string;
+  checkOutTime?: string;
+  loadingCompletedTime?: string;
+}
+
+export type Order = ParkingOrder | ValetOrder | DockOrder;
+
+// 添加订单详情接口
+export interface OrderDetail {
+  id: string | number;
+  orderNo: string;
+  status: string;
+  serviceType: string;
+  createdAt: string;
+  startTime: string;
+  endTime?: string;
   customer: {
     name: string;
     phone: string;
@@ -231,54 +374,54 @@ export interface OrderBase {
     model?: string;
     color?: string;
   }>;
-  payment?: {
+  spotNo?: string;
+  payment: {
     method: string;
     time: string;
     transactionId: string;
+    status: string;
+    amount: number;
   };
-  refundInfo?: {
-    requestTime?: string;
-    reason?: string;
-    status?: string;
-    amount?: number;
-    failReason?: string;
-  };
-}
+  parkingFee: number;
+  serviceFee: number;
+  tax: number;
+  totalAmount: number;
+  timeline: Array<{
+    time: string;
+    status: string;
+    description: string;
+  }>;
+  actions: string[];
+} 
 
-export interface ParkingOrder extends OrderBase {
-  serviceType: ServiceType.Parking;
-  spotType: string;
-  spotNo: string;
-  reservedStartTime: string;
-  reservedEndTime: string;
+export interface DockOrderDetail extends OrderDetail {
+  driver: {
+    name: string;
+    phone: string;
+    carrier: string;
+  };
+  loadType: string;
+  rateType: string;
+  spotCount: number;
+  duration: string;
+  cargo?: {
+    type: string;
+    poNumber: string;
+    weight: string;
+    quantity: number;
+    description?: string;
+  };
   checkInTime?: string;
   checkOutTime?: string;
-  pricing: {
-    rateType: string;
-    rateAmount: number;
-    rateUnit: string;
-    parkingFee: number;
-    serviceFee?: number;
-    overtimeFee?: number;
-    tax?: number;
-    totalAmount: number;
-  };
-}
+  loadingCompletedTime?: string;
+} 
 
-export interface ValetOrder extends OrderBase {
-  serviceType: ServiceType.Valet;
-  valetInfo: {
-    valetId?: string;
-    valetName?: string;
-    pickupLocation?: string;
-    returnLocation?: string;
-    notes?: string;
-  };
-  pricing: {
-    serviceFee: number;
-    tax?: number;
-    totalAmount: number;
-  };
-}
-
-export type Order = ParkingOrder | ValetOrder; 
+export type DockStatus = Extract<OrderStatus, 
+  | OrderStatus.Requested
+  | OrderStatus.Scheduled
+  | OrderStatus.Arrived
+  | OrderStatus.InProgress
+  | OrderStatus.LoadingCompleted
+  | OrderStatus.Completed
+  | OrderStatus.Cancelled
+>; 

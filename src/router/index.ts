@@ -1,5 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '@/components/Layout.vue'
 
 const routes: RouteRecordRaw[] = [
@@ -65,7 +65,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/orders/:id',
         name: 'OrderDetail',
-        component: () => import('@/views/orders/DockOrderDetail.vue'),
+        component: () => import('@/views/orders/OrderDetail.vue'),
+        props: true,
         meta: {
           hideTabbar: true
         }
@@ -88,7 +89,7 @@ const routes: RouteRecordRaw[] = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 })
 
