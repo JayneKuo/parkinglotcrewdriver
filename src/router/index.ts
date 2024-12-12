@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '@/components/Layout.vue'
 import ValetOrderDetail from '@/views/orders/ValetOrderDetail.vue';
 import ParkingOrderDetail from '@/views/orders/ParkingOrderDetail.vue';
+import DockOrderDetail from '@/views/orders/DockOrderDetail.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -90,6 +91,15 @@ const routes: RouteRecordRaw[] = [
         path: '/valet-orders/:id',
         name: 'ValetOrderDetail',
         component: ValetOrderDetail,
+        props: true,
+        meta: {
+          hideTabbar: true
+        }
+      },
+      {
+        path: '/dock-orders/:id',
+        name: 'DockOrderDetail',
+        component: DockOrderDetail,
         props: true,
         meta: {
           hideTabbar: true

@@ -129,28 +129,28 @@
       <!-- 停车信息 -->
       <div class="info-card" v-if="hasParkedInfo">
         <div class="card-header">
-          <h3>Parking Information</h3>
+          <h3>停车信息</h3>
         </div>
         <div class="info-content">
           <div class="info-row" v-if="order?.checkInTime">
-            <span class="label">Check-in Time</span>
-            <span class="value">{{ formatTime(order.checkInTime) }}</span>
+            <span class="label">入场时间</span>
+            <span class="value highlight">{{ formatTime(order.checkInTime) }}</span>
           </div>
           <div class="info-row" v-if="order?.parkedTime">
-            <span class="label">Parked Time</span>
+            <span class="label">停车完成时间</span>
             <span class="value">{{ formatTime(order.parkedTime) }}</span>
           </div>
           <div class="info-row" v-if="order?.requestTime">
-            <span class="label">Request Time</span>
+            <span class="label">取车请求时间</span>
             <span class="value">{{ formatTime(order.requestTime) }}</span>
           </div>
           <div class="info-row" v-if="order?.checkOutTime">
-            <span class="label">Check-out Time</span>
-            <span class="value">{{ formatTime(order.checkOutTime) }}</span>
+            <span class="label">离场时间</span>
+            <span class="value highlight">{{ formatTime(order.checkOutTime) }}</span>
           </div>
-          <div class="info-row" v-if="order?.duration">
-            <span class="label">Duration</span>
-            <span class="value">{{ formatDuration(order.duration) }}</span>
+          <div class="info-row">
+            <span class="label">停车时长</span>
+            <span class="value highlight">{{ formatParkingDuration(parkingDuration) }}</span>
           </div>
         </div>
       </div>
@@ -206,25 +206,44 @@
       <!-- 支付信息 -->
       <div class="info-card" v-if="order?.payment">
         <div class="card-header">
-          <h3>Payment Information</h3>
+          <h3>支付信息</h3>
+          <span class="payment-status" :class="order.payment.status">
+            {{ order.payment.status === 'paid' ? '已支付' : '未支付' }}
+          </span>
         </div>
         <div class="info-content">
           <div class="info-row">
-            <span class="label">Amount</span>
-            <span class="value">${{ order?.payment?.amount?.toFixed(2) }}</span>
+            <span class="label">支付金额</span>
+            <span class="value highlight">${{ order?.payment?.amount?.toFixed(2) }}</span>
           </div>
           <div class="info-row">
-            <span class="label">Method</span>
+            <span class="label">支付方式</span>
             <span class="value">{{ order?.payment?.method }}</span>
           </div>
           <div class="info-row">
-            <span class="label">Transaction ID</span>
-            <span class="value">{{ order?.payment?.transactionId }}</span>
+            <span class="label">支付流水号</span>
+            <span class="value monospace">{{ order?.payment?.transactionId || '-' }}</span>
           </div>
           <div class="info-row">
-            <span class="label">Payment Time</span>
+            <span class="label">支付时间</span>
             <span class="value">{{ formatTime(order?.payment?.time) }}</span>
           </div>
+        </div>
+      </div>
+
+      <!-- 在底部添加操作按钮 -->
+      <div class="bottom-actions" v-if="availableActions.length">
+        <div class="action-buttons">
+          <van-button
+            v-for="action in availableActions"
+            :key="action"
+            :type="ValetActionConfig[action]?.type || 'default'"
+            size="normal"
+            class="action-button"
+            @click="handleAction(action)"
+          >
+            {{ ValetActionConfig[action]?.text || action }}
+          </van-button>
         </div>
       </div>
     </div>
@@ -238,6 +257,7 @@ import { getStatusType, getStatusText } from '@/types/orderStatus';
 import type { Order, OrderStatus, Vehicle } from '@/types/orders';
 import { formatTime } from '@/utils/format';
 import { showImagePreview } from 'vant';
+import { ValetOrderActions, ValetActionConfig, ValetOrderStatus, ValetStatusConfig } from '@/types/orders';
 
 const router = useRouter();
 const route = useRoute();
@@ -285,7 +305,7 @@ function getPhotoLabel(type: string): string {
     left: 'Left Side',
     right: 'Right Side',
     dashboard: 'Dashboard',
-    detail: 'Detail',
+    closeup: 'Close-up',
     parked: 'Parked'
   };
   return labels[type] || type;
@@ -335,6 +355,96 @@ function formatDuration(duration?: string | number): string {
   const minutes = Math.round((duration - hours) * 60);
   return `${hours}h ${minutes}m`;
 }
+
+// 获取当前状态可用的操作
+const availableActions = computed(() => {
+  if (!order.value?.status) return [];
+  return ValetOrderActions[order.value.status as ValetOrderStatus] || [];
+});
+
+// 处理操作按钮点击
+async function handleAction(action: string) {
+  const config = ValetActionConfig[action];
+  if (!config) return;
+
+  try {
+    switch (action) {
+      case 'cancel-reservation':
+        await handleCancelReservation();
+        break;
+      case 'check-in':
+        await handleCheckIn();
+        break;
+      case 'request-vehicle':
+        await handleRequestVehicle();
+        break;
+      case 'pay-now':
+        await handlePayNow();
+        break;
+    }
+  } catch (error) {
+    console.error('Action failed:', error);
+    showToast('Operation failed');
+  }
+}
+
+// 具体操作处理函数
+async function handleCancelReservation() {
+  // 实现取消预订逻辑
+}
+
+async function handleCheckIn() {
+  // 实现入场逻辑
+}
+
+async function handleRequestVehicle() {
+  // 实现请求取车逻辑
+}
+
+async function handlePayNow() {
+  // 实现支付逻辑
+}
+
+// 修改状态获取函数
+function getStatusType(status: string): string {
+  if (!status) return 'default';
+  const config = ValetStatusConfig[status as ValetOrderStatus];
+  return config ? config.type : 'default';
+}
+
+function getStatusText(status: string): string {
+  if (!status) return '-';
+  const config = ValetStatusConfig[status as ValetOrderStatus];
+  return config ? config.text : status;
+}
+
+// 计算停车时长
+const parkingDuration = computed(() => {
+  if (!order.value) return null;
+  
+  const endTime = order.value.checkOutTime || new Date().toISOString();
+  const startTime = order.value.checkInTime;
+  
+  if (!startTime) return null;
+  
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const diffMs = end.getTime() - start.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  
+  return {
+    hours: Math.floor(diffHours),
+    minutes: Math.floor((diffHours % 1) * 60)
+  };
+});
+
+// 格式化停车时长显示
+function formatParkingDuration(duration: { hours: number; minutes: number } | null): string {
+  if (!duration) return '-';
+  const { hours, minutes } = duration;
+  if (hours === 0) return `${minutes}分钟`;
+  return `${hours}小时${minutes > 0 ? ` ${minutes}分钟` : ''}`;
+}
 </script>
 
 <style scoped>
@@ -343,11 +453,12 @@ function formatDuration(duration?: string | number): string {
   min-height: 100vh;
   background: #1a1a1a;
   padding-top: 46px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 .content {
   padding: 16px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 /* 导航栏样式 */
@@ -418,11 +529,17 @@ function formatDuration(duration?: string | number): string {
 
 /* 状态标签 */
 .status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
   font-weight: 500;
 }
+
+.status-badge.primary { background: #4361ee; color: #fff; }
+.status-badge.warning { background: #ff9f1c; color: #fff; }
+.status-badge.success { background: #2ec4b6; color: #fff; }
+.status-badge.danger { background: #e71d36; color: #fff; }
+.status-badge.default { background: #666; color: #fff; }
 
 /* 车牌号样式 */
 .plate {
@@ -438,9 +555,11 @@ function formatDuration(duration?: string | number): string {
 /* 照片网格 */
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 12px;
   padding: 16px;
+  max-height: 500px;
+  overflow-y: auto;
 }
 
 .photo-item {
@@ -449,6 +568,12 @@ function formatDuration(duration?: string | number): string {
   border-radius: 8px;
   overflow: hidden;
   background: #2a2a2a;
+  cursor: pointer;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
   
   img {
     width: 100%;
@@ -501,5 +626,66 @@ function formatDuration(duration?: string | number): string {
   .order-detail {
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
+}
+
+/* 底部操作按钮样式 */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(34, 34, 34, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.action-button {
+  flex: 1;
+  height: 44px;
+}
+
+/* 安全区适配 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-actions {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* 高亮显示的值 */
+.value.highlight {
+  color: #7c4dff;
+  font-weight: 600;
+}
+
+/* 等宽字体 */
+.value.monospace {
+  font-family: 'SF Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+/* 支付状态标签 */
+.payment-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.payment-status.paid {
+  background: #2ec4b6;
+  color: #fff;
+}
+
+.payment-status.unpaid {
+  background: #ff9f1c;
+  color: #fff;
 }
 </style>

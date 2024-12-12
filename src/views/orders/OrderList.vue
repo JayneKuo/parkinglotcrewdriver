@@ -443,6 +443,71 @@ function generateOrder(serviceType: string, status: string, index: number) {
       `${String(index + 1).padStart(3, '0')}`
   };
 
+  // 为 valet 订单添加特殊信息
+  if (serviceType === 'valet') {
+    return {
+      id: orders.value.length + index + 1,
+      orderNo: `${serviceType.toUpperCase()}${String(Date.now()).slice(-6)}${index}`,
+      status,
+      parkingLot: {
+        id: 1,
+        name: getDockStationName(serviceType),
+        address: getDockAddress(serviceType),
+        area: spotInfo.area
+      },
+      startTime: startTime.toISOString(),
+      vehicles: [{ 
+        licensePlate: `${serviceType === 'dock' ? 'TRUCK' : 'ABC'}${String(index + 1).padStart(3, '0')}` 
+      }],
+      serviceType,
+      totalAmount: 30 + (index * 5), // 金额随状态递增
+      createdAt: new Date().toISOString(),
+      spotNo: spotInfo.spotNo,
+      valet: status !== 'Reserved' ? {
+        name: `Valet ${index + 1}`,
+        phone: `(555) ${String(index).padStart(3, '0')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        status: 'Active',
+        assignedTime: new Date(startTime.getTime() + 5 * 60000).toISOString() // 分配时间为开始时间后5分钟
+      } : undefined,
+      vehiclePhotos: [
+        {
+          url: 'https://example.com/front.jpg',
+          type: 'front'
+        },
+        {
+          url: 'https://example.com/back.jpg',
+          type: 'back'
+        },
+        {
+          url: 'https://example.com/left.jpg',
+          type: 'left'
+        },
+        {
+          url: 'https://example.com/right.jpg',
+          type: 'right'
+        },
+        {
+          url: 'https://example.com/dashboard.jpg',
+          type: 'dashboard'
+        },
+        {
+          url: 'https://example.com/closeup1.jpg',
+          type: 'closeup'
+        },
+        {
+          url: 'https://example.com/closeup2.jpg',
+          type: 'closeup'
+        },
+        {
+          url: 'https://example.com/closeup3.jpg',
+          type: 'closeup'
+        }
+      ],
+      parkedPhoto: status === 'Parked' || status === 'Requested' || status === 'OnTheWay' || status === 'Ready' || status === 'Paid' || status === 'Closed' ? 
+        'https://example.com/parked.jpg' : undefined
+    };
+  }
+
   return {
     id: orders.value.length + index + 1,
     orderNo: `${serviceType.toUpperCase()}${String(Date.now()).slice(-6)}${index}`,
@@ -640,48 +705,21 @@ function handleTabChange(tab: string) {
 
 // Navigate to order details
 function goToDetail(orderId: string | number) {
-  const currentOrder = orders.value.find(order => order.id === orderId);
-  if (currentOrder) {
-    // 打印一下数据，看看是否正确
-    console.log('Current Order:', currentOrder);
-    
-    router.push({
-      name: currentOrder.serviceType === 'valet' ? 'ValetOrderDetail' : 'ParkingOrderDetail',
-      params: { id: String(orderId) },
-      query: {
-        type: currentOrder.serviceType,
-        status: currentOrder.status,
-        // 确保所有需要的数据都被传递
-        data: JSON.stringify({
-          id: currentOrder.id,
-          orderNo: currentOrder.orderNo,
-          status: currentOrder.status,
-          createdAt: currentOrder.createdAt,
-          driver: currentOrder.driver,
-          vehicles: currentOrder.vehicles,
-          valet: currentOrder.valet,
-          parkingLot: currentOrder.parkingLot,
-          spotType: currentOrder.spotType,
-          rateType: currentOrder.rateType,
-          rate: currentOrder.rate,
-          spotCount: currentOrder.spotCount,
-          startTime: currentOrder.startTime,
-          spotNo: currentOrder.spotNo,
-          checkInTime: currentOrder.checkInTime,
-          parkedTime: currentOrder.parkedTime,
-          requestTime: currentOrder.requestTime,
-          checkOutTime: currentOrder.checkOutTime,
-          duration: currentOrder.duration,
-          vehiclePhotos: currentOrder.vehiclePhotos,
-          parkedPhoto: currentOrder.parkedPhoto,
-          serviceFee: currentOrder.serviceFee,
-          tax: currentOrder.tax,
-          totalAmount: currentOrder.totalAmount,
-          payment: currentOrder.payment
-        }),
-        activeTab: activeTab.value
-      }
-    });
+  const order = orders.value.find(o => o.id === orderId);
+  if (!order) return;
+
+  switch (order.serviceType) {
+    case 'valet':
+      router.push(`/valet-orders/${orderId}`);
+      break;
+    case 'parking':
+      router.push(`/parking-orders/${orderId}`);
+      break;
+    case 'dock':
+      router.push(`/dock-orders/${orderId}`);
+      break;
+    default:
+      router.push(`/orders/${orderId}`);
   }
 }
 

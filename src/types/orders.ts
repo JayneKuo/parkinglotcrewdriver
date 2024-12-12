@@ -313,13 +313,44 @@ export interface ParkingOrder extends OrderBase {
 }
 
 export interface ValetOrder extends OrderBase {
-  serviceType: ServiceType.Valet;
-  valetInfo?: {
-    valetId?: string;
-    valetName?: string;
-    pickupLocation?: string;
-    returnLocation?: string;
-    notes?: string;
+  serviceType: 'valet';
+  status: ValetOrderStatus;
+  driver: {
+    name: string;
+    phone: string;
+  };
+  vehicles: Array<{
+    licensePlate: string;
+    brand: string;
+    model: string;
+    color: string;
+  }>;
+  valet?: {
+    name: string;
+    phone: string;
+    status: string;
+    assignedTime: string;
+  };
+  spotType: string;
+  rateType: string;
+  rate: number;
+  spotCount: number;
+  spotNo?: string;
+  checkInTime?: string;
+  parkedTime?: string;
+  requestTime?: string;
+  checkOutTime?: string;
+  duration?: number;
+  vehiclePhotos?: Array<{
+    url: string;
+    type: 'front' | 'back' | 'left' | 'right' | 'dashboard' | 'detail' | 'parked';
+  }>;
+  parkedPhoto?: string;
+  payment?: {
+    amount: number;
+    method: string;
+    transactionId: string;
+    time: string;
   };
 }
 
@@ -490,3 +521,117 @@ export interface Order {
   totalAmount: number;
   payment?: Payment;
 } 
+
+// Valet 订单状态
+export enum ValetOrderStatus {
+  Reserved = 'Reserved',         // 预订成功
+  CheckedIn = 'CheckedIn',      // 已到达停车场
+  Pending = 'Pending',          // 待泊车
+  Parked = 'Parked',           // 已泊车
+  Requested = 'Requested',      // 取车请求中
+  OnTheWay = 'OnTheWay',       // 车辆送回中
+  Ready = 'Ready',             // 待支付
+  Paid = 'Paid',              // 已支付
+  Closed = 'Closed',          // 订单已完成
+  Cancelled = 'Cancelled'     // 已取消
+}
+
+// Valet 订单操作配置
+export const ValetOrderActions: Record<ValetOrderStatus, string[]> = {
+  [ValetOrderStatus.Reserved]: ['cancel-reservation', 'check-in'],
+  [ValetOrderStatus.CheckedIn]: [],
+  [ValetOrderStatus.Pending]: [],
+  [ValetOrderStatus.Parked]: ['request-vehicle'],
+  [ValetOrderStatus.Requested]: ['pay-now'],
+  [ValetOrderStatus.OnTheWay]: [],
+  [ValetOrderStatus.Ready]: ['pay-now'],
+  [ValetOrderStatus.Paid]: [],
+  [ValetOrderStatus.Closed]: [],
+  [ValetOrderStatus.Cancelled]: []
+};
+
+// 操作按钮配置
+export const ValetActionConfig: Record<string, {
+  text: string;
+  type: 'primary' | 'default';
+  handler: string;
+}> = {
+  'cancel-reservation': {
+    text: 'Cancel Reservation',
+    type: 'default',
+    handler: 'handleCancelReservation'
+  },
+  'check-in': {
+    text: 'Check In',
+    type: 'primary',
+    handler: 'handleCheckIn'
+  },
+  'request-vehicle': {
+    text: 'Request Vehicle',
+    type: 'primary',
+    handler: 'handleRequestVehicle'
+  },
+  'pay-now': {
+    text: 'Pay Now',
+    type: 'primary',
+    handler: 'handlePayNow'
+  }
+}; 
+
+// Valet 状态颜色配置
+export const ValetStatusConfig: Record<ValetOrderStatus, {
+  text: string;
+  type: 'primary' | 'success' | 'warning' | 'danger';
+  hint?: string;
+}> = {
+  [ValetOrderStatus.Reserved]: {
+    text: 'Reserved',
+    type: 'primary',
+    hint: 'Valet spot reserved'
+  },
+  [ValetOrderStatus.CheckedIn]: {
+    text: 'Checked In',
+    type: 'primary',
+    hint: 'Vehicle checked in'
+  },
+  [ValetOrderStatus.Pending]: {
+    text: 'Pending',
+    type: 'warning',
+    hint: 'Waiting for valet'
+  },
+  [ValetOrderStatus.Parked]: {
+    text: 'Parked',
+    type: 'success',
+    hint: 'Vehicle safely parked'
+  },
+  [ValetOrderStatus.Requested]: {
+    text: 'Requested',
+    type: 'warning',
+    hint: 'Pickup requested'
+  },
+  [ValetOrderStatus.OnTheWay]: {
+    text: 'On The Way',
+    type: 'warning',
+    hint: 'Vehicle being retrieved'
+  },
+  [ValetOrderStatus.Ready]: {
+    text: 'Ready',
+    type: 'success',
+    hint: 'Ready for pickup'
+  },
+  [ValetOrderStatus.Paid]: {
+    text: 'Paid',
+    type: 'success',
+    hint: 'Payment completed'
+  },
+  [ValetOrderStatus.Closed]: {
+    text: 'Closed',
+    type: 'success',
+    hint: 'Order completed'
+  },
+  [ValetOrderStatus.Cancelled]: {
+    text: 'Cancelled',
+    type: 'danger',
+    hint: 'Order cancelled'
+  }
+}; 
