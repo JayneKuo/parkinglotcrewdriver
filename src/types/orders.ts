@@ -425,3 +425,68 @@ export type DockStatus = Extract<OrderStatus,
   | OrderStatus.Completed
   | OrderStatus.Cancelled
 >; 
+
+export interface Vehicle {
+  licensePlate: string;
+  brand: string;
+  model: string;
+  color: string;
+}
+
+export interface Driver {
+  name: string;
+  phone: string;
+}
+
+export interface Valet {
+  name: string;
+  phone: string;
+  status: string;
+  assignedTime: string;
+}
+
+export interface ParkingLot {
+  name: string;
+  address: string;
+  area: string;
+}
+
+export interface VehiclePhoto {
+  url: string;
+  type: string;
+}
+
+export interface Payment {
+  amount: number;
+  method: string;
+  transactionId: string;
+  time: string;
+}
+
+export interface Order {
+  id: string | number;
+  orderNo: string;
+  status: OrderStatus;
+  createdAt: string;
+  driver: Driver;
+  vehicles: Vehicle[];
+  valet?: Valet;
+  parkingLot: ParkingLot;
+  spotType: string;
+  rateType: string;
+  rate: number;
+  spotCount: number;
+  startTime: string;
+  spotNo?: string;
+  checkInTime?: string;
+  parkedTime?: string;
+  requestTime?: string;
+  checkOutTime?: string;
+  duration?: number;
+  vehiclePhotos?: VehiclePhoto[];
+  parkedPhoto?: string;
+  serviceFee: number;
+  tax: number;
+  totalAmount: number;
+  payment?: Payment;
+} 

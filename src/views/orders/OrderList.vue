@@ -642,13 +642,43 @@ function handleTabChange(tab: string) {
 function goToDetail(orderId: string | number) {
   const currentOrder = orders.value.find(order => order.id === orderId);
   if (currentOrder) {
+    // 打印一下数据，看看是否正确
+    console.log('Current Order:', currentOrder);
+    
     router.push({
-      name: 'OrderDetail',
+      name: currentOrder.serviceType === 'valet' ? 'ValetOrderDetail' : 'ParkingOrderDetail',
       params: { id: String(orderId) },
       query: {
         type: currentOrder.serviceType,
         status: currentOrder.status,
-        data: JSON.stringify(currentOrder),
+        // 确保所有需要的数据都被传递
+        data: JSON.stringify({
+          id: currentOrder.id,
+          orderNo: currentOrder.orderNo,
+          status: currentOrder.status,
+          createdAt: currentOrder.createdAt,
+          driver: currentOrder.driver,
+          vehicles: currentOrder.vehicles,
+          valet: currentOrder.valet,
+          parkingLot: currentOrder.parkingLot,
+          spotType: currentOrder.spotType,
+          rateType: currentOrder.rateType,
+          rate: currentOrder.rate,
+          spotCount: currentOrder.spotCount,
+          startTime: currentOrder.startTime,
+          spotNo: currentOrder.spotNo,
+          checkInTime: currentOrder.checkInTime,
+          parkedTime: currentOrder.parkedTime,
+          requestTime: currentOrder.requestTime,
+          checkOutTime: currentOrder.checkOutTime,
+          duration: currentOrder.duration,
+          vehiclePhotos: currentOrder.vehiclePhotos,
+          parkedPhoto: currentOrder.parkedPhoto,
+          serviceFee: currentOrder.serviceFee,
+          tax: currentOrder.tax,
+          totalAmount: currentOrder.totalAmount,
+          payment: currentOrder.payment
+        }),
         activeTab: activeTab.value
       }
     });

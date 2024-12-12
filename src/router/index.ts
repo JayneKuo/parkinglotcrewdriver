@@ -1,6 +1,8 @@
 import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '@/components/Layout.vue'
+import ValetOrderDetail from '@/views/orders/ValetOrderDetail.vue';
+import ParkingOrderDetail from '@/views/orders/ParkingOrderDetail.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -56,10 +58,10 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/parking-orders/:id',
         name: 'ParkingOrderDetail',
-        component: () => import('@/views/orders/ParkingOrderDetail.vue'),
+        component: ParkingOrderDetail,
+        props: true,
         meta: {
-          hideTabbar: true,
-          title: 'Order Details'
+          hideTabbar: true
         }
       },
       {
@@ -80,6 +82,15 @@ const routes: RouteRecordRaw[] = [
         path: '/parking/:id/dock-confirm',
         name: 'DockConfirm',
         component: () => import('@/views/parking/DockConfirm.vue'),
+        meta: {
+          hideTabbar: true
+        }
+      },
+      {
+        path: '/valet-orders/:id',
+        name: 'ValetOrderDetail',
+        component: ValetOrderDetail,
+        props: true,
         meta: {
           hideTabbar: true
         }
