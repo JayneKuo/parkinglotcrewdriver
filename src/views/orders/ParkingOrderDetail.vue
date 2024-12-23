@@ -17,17 +17,19 @@
             {{ getStatusText(safeGetStatus(order?.status)) }}
           </van-tag>
         </div>
-        <div class="info-row">
-          <span class="label">Order No.</span>
-          <span class="value order-id"># {{ order?.orderNo }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Created Time</span>
-          <span class="value">{{ formatTime(order?.createdTime) }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Amount</span>
-          <span class="value">${{ order?.total?.toFixed(2) }}</span>
+        <div class="info-content">
+          <div class="info-row">
+            <span class="label">Order No.</span>
+            <span class="value order-id"># {{ order?.orderNo }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Created Time</span>
+            <span class="value">{{ formatTime(order?.createdTime) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Amount</span>
+            <span class="value">${{ order?.total?.toFixed(2) }}</span>
+          </div>
         </div>
       </div>
 
@@ -36,20 +38,22 @@
         <div class="card-header">
           <h2>Driver Information</h2>
         </div>
-        <div class="info-row">
-          <span class="label">Name</span>
-          <span class="value">{{ order?.driverInfo?.name }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Phone</span>
-          <span class="value clickable" @click="handleCall">
-            {{ order?.driverInfo?.phone }}
-            <van-icon name="phone-o" class="action-icon" />
-          </span>
-        </div>
-        <div class="info-row" v-if="order?.driverInfo?.email">
-          <span class="label">Email</span>
-          <span class="value">{{ order?.driverInfo?.email }}</span>
+        <div class="info-content">
+          <div class="info-row">
+            <span class="label">Name</span>
+            <span class="value">{{ order?.driverInfo?.name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phone</span>
+            <span class="value clickable" @click="handleCall">
+              {{ order?.driverInfo?.phone }}
+              <van-icon name="phone-o" class="action-icon" />
+            </span>
+          </div>
+          <div class="info-row" v-if="order?.driverInfo?.email">
+            <span class="label">Email</span>
+            <span class="value">{{ order?.driverInfo?.email }}</span>
+          </div>
         </div>
       </div>
 
@@ -58,21 +62,23 @@
         <div class="card-header">
           <h2>Vehicle Information</h2>
         </div>
-        <div class="info-row">
-          <span class="label">License Plate</span>
-          <span class="value plate">{{ order?.vehicles?.[0]?.licensePlate }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Brand</span>
-          <span class="value">{{ order?.vehicles?.[0]?.brand }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Model</span>
-          <span class="value">{{ order?.vehicles?.[0]?.model }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Color</span>
-          <span class="value">{{ order?.vehicles?.[0]?.color }}</span>
+        <div class="info-content">
+          <div class="info-row">
+            <span class="label">License Plate</span>
+            <span class="value plate">{{ order?.vehicles?.[0]?.licensePlate }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Brand</span>
+            <span class="value">{{ order?.vehicles?.[0]?.brand }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Model</span>
+            <span class="value">{{ order?.vehicles?.[0]?.model }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Color</span>
+            <span class="value">{{ order?.vehicles?.[0]?.color }}</span>
+          </div>
         </div>
       </div>
 
@@ -81,44 +87,46 @@
         <div class="card-header">
           <h2>Parking Information</h2>
         </div>
-        <div class="info-row">
-          <span class="label">Parking Lot</span>
-          <span class="value">{{ order?.parkingLot?.name }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Address</span>
-          <span class="value clickable" @click="handleNavigate">
-            {{ order?.parkingLot?.address }}
-            <van-icon name="location-o" class="action-icon" />
-          </span>
-        </div>
-        <div class="info-row">
-          <span class="label">Spot Type</span>
-          <span class="value">{{ order?.spotType }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Rate Type</span>
-          <span class="value">{{ order?.rateType }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Rate Price</span>
-          <span class="value">${{ order?.ratePrice?.toFixed(2) }}/hr</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Start Time</span>
-          <span class="value">{{ formatTime(order?.startTime) }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">End Time</span>
-          <span class="value">{{ formatTime(order?.endTime) }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Duration</span>
-          <span class="value">{{ order?.duration }} minutes</span>
-        </div>
-        <div class="info-row" v-if="order?.spotNumber">
-          <span class="label">Spot Number</span>
-          <span class="value">{{ order?.spotNumber }}</span>
+        <div class="info-content">
+          <div class="info-row">
+            <span class="label">Parking Lot</span>
+            <span class="value">{{ order?.parkingLot?.name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Address</span>
+            <span class="value clickable" @click="handleNavigate">
+              {{ order?.parkingLot?.address }}
+              <van-icon name="location-o" class="action-icon" />
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="label">Spot Type</span>
+            <span class="value">{{ order?.spotType }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Rate Type</span>
+            <span class="value">{{ order?.rateType }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Rate Price</span>
+            <span class="value">${{ order?.ratePrice?.toFixed(2) }}/hr</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Start Time</span>
+            <span class="value">{{ formatTime(order?.startTime) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">End Time</span>
+            <span class="value">{{ formatTime(order?.endTime) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Duration</span>
+            <span class="value">{{ order?.duration }} minutes</span>
+          </div>
+          <div class="info-row" v-if="order?.spotNumber">
+            <span class="label">Spot Number</span>
+            <span class="value">{{ order?.spotNumber }}</span>
+          </div>
         </div>
       </div>
 
@@ -127,13 +135,15 @@
         <div class="card-header">
           <h2>Check In/Out Information</h2>
         </div>
-        <div class="info-row" v-if="order?.checkInTime">
-          <span class="label">Check In Time</span>
-          <span class="value">{{ formatTime(order?.checkInTime) }}</span>
-        </div>
-        <div class="info-row" v-if="order?.totalDuration">
-          <span class="label">Total Duration</span>
-          <span class="value">{{ order?.totalDuration }} minutes</span>
+        <div class="info-content">
+          <div class="info-row" v-if="order?.checkInTime">
+            <span class="label">Check In Time</span>
+            <span class="value">{{ formatTime(order?.checkInTime) }}</span>
+          </div>
+          <div class="info-row" v-if="order?.totalDuration">
+            <span class="label">Total Duration</span>
+            <span class="value">{{ order?.totalDuration }} minutes</span>
+          </div>
         </div>
       </div>
 
@@ -142,21 +152,23 @@
         <div class="card-header">
           <h2>Overtime Information</h2>
         </div>
-        <div class="info-row">
-          <span class="label">Overtime Start</span>
-          <span class="value">{{ formatTime(order?.overtimeStart) }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Overtime Duration</span>
-          <span class="value">{{ order?.overtimeDuration }} minutes</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Overtime Rate</span>
-          <span class="value">${{ order?.overtime?.rate?.toFixed(2) }}/hr</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Overtime Fee</span>
-          <span class="value">${{ order?.overtime?.total?.toFixed(2) }}</span>
+        <div class="info-content">
+          <div class="info-row">
+            <span class="label">Overtime Start</span>
+            <span class="value">{{ formatTime(order?.overtimeStart) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Overtime Duration</span>
+            <span class="value">{{ order?.overtimeDuration }} minutes</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Overtime Rate</span>
+            <span class="value">${{ order?.overtime?.rate?.toFixed(2) }}/hr</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Overtime Fee</span>
+            <span class="value">${{ order?.overtime?.total?.toFixed(2) }}</span>
+          </div>
         </div>
       </div>
 
@@ -165,17 +177,19 @@
         <div class="card-header">
           <h2>Payment Information</h2>
         </div>
-        <div class="info-row">
-          <span class="label">Service Fee</span>
-          <span class="value">${{ order?.serviceFee?.toFixed(2) }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Tax</span>
-          <span class="value">${{ order?.tax?.toFixed(2) }}</span>
-        </div>
-        <div class="info-row total">
-          <span class="label">Total Amount</span>
-          <span class="value">${{ order?.total?.toFixed(2) }}</span>
+        <div class="info-content">
+          <div class="info-row">
+            <span class="label">Service Fee</span>
+            <span class="value">${{ order?.serviceFee?.toFixed(2) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Tax</span>
+            <span class="value">${{ order?.tax?.toFixed(2) }}</span>
+          </div>
+          <div class="info-row total">
+            <span class="label">Total Amount</span>
+            <span class="value">${{ order?.total?.toFixed(2) }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -286,7 +300,7 @@ const hasOvertimeInfo = computed(() => {
   
   h2 {
     color: var(--text-primary);
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     margin: 0;
   }
@@ -300,10 +314,11 @@ const hasOvertimeInfo = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
   
   &:last-child {
-    margin-bottom: 0;
+    border-bottom: none;
   }
   
   .label {
