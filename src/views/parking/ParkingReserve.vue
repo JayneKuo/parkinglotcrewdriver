@@ -553,22 +553,26 @@ const getMaxDuration = computed(() => {
 <style scoped>
 .reserve-page {
   min-height: 100vh;
-  background: #1a1a1a;
-  color: #fff;
-  padding-bottom: 80px;
+  background: var(--page-background);
+  padding-top: 46px;
 }
 
 .custom-nav {
-  background: #1a1a1a;
+  background: var(--card-background);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 :deep(.custom-nav .van-nav-bar__title) {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 18px;
 }
 
 :deep(.van-nav-bar__arrow) {
-  color: #fff !important;
+  color: var(--text-primary) !important;
 }
 
 .content {
@@ -580,10 +584,10 @@ const getMaxDuration = computed(() => {
 }
 
 .section-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  color: #7c4dff;
-  margin: 0 0 12px;
+  color: var(--primary-color);
+  margin: 24px 0 16px;
   letter-spacing: 1px;
 }
 
@@ -594,8 +598,8 @@ const getMaxDuration = computed(() => {
 }
 
 .option-card {
-  background: #2a2a2a;
-  border: 1px solid #2a2a2a;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px;
   cursor: pointer;
@@ -604,8 +608,16 @@ const getMaxDuration = computed(() => {
 }
 
 .option-card.active {
-  background: #7c4dff;
-  border-color: #7c4dff;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.option-card.active .option-name {
+  color: #ffffff;
+}
+
+.option-card.active .option-desc {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .option-card.disabled {
@@ -617,21 +629,23 @@ const getMaxDuration = computed(() => {
   font-size: 15px;
   font-weight: 500;
   margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .option-desc {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-tertiary);
 }
 
 .option-tag {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--secondary-background);
   padding: 2px 4px;
   border-radius: 4px;
   font-size: 10px;
+  color: var(--text-tertiary);
 }
 
 .input-row {
@@ -646,16 +660,18 @@ const getMaxDuration = computed(() => {
 }
 
 .time-picker {
-  background: #2a2a2a;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
   display: flex;
   align-items: center;
   cursor: pointer;
+  color: var(--text-primary);
 }
 
 .time-icon {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-size: 20px;
   margin-right: 12px;
 }
@@ -666,11 +682,12 @@ const getMaxDuration = computed(() => {
 }
 
 .arrow-icon {
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .input-field {
-  background: #2a2a2a;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 14px;
 }
@@ -679,13 +696,14 @@ const getMaxDuration = computed(() => {
   width: 100%;
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
   outline: none;
 }
 
 .summary-card {
-  background: #2a2a2a;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   margin-top: 32px;
@@ -696,18 +714,18 @@ const getMaxDuration = computed(() => {
   justify-content: space-between;
   margin-bottom: 12px;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
 }
 
 .summary-row.total {
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-color);
   margin-bottom: 0;
 }
 
 .price {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-size: 18px;
   font-weight: 600;
 }
@@ -718,43 +736,45 @@ const getMaxDuration = computed(() => {
   left: 0;
   right: 0;
   padding: 16px;
-  background: #1a1a1a;
-  border-top: 1px solid #2a2a2a;
+  background: var(--card-background);
+  border-top: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
 }
 
 .submit-btn {
-  background: #7c4dff;
+  background: var(--primary-color);
   border: none;
   height: 44px;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 500;
+  color: #ffffff;
 }
 
 :deep(.submit-btn.van-button--disabled) {
   opacity: 0.5;
-  background: #7c4dff;
+  background: var(--status-default);
 }
 
 :deep(.van-picker) {
-  background: #2a2a2a;
+  background: var(--card-background);
 }
 
 :deep(.van-picker__title) {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 :deep(.van-picker-column__item) {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 :deep(.van-picker__cancel),
 :deep(.van-picker__confirm) {
-  color: #7c4dff;
+  color: var(--primary-color);
 }
 
 :deep(.van-picker__toolbar) {
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .load-icon {
@@ -792,7 +812,7 @@ const getMaxDuration = computed(() => {
   right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #666;
+  color: var(--text-tertiary);
   font-size: 14px;
   min-width: 45px;
   text-align: right;

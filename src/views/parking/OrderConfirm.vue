@@ -8,38 +8,6 @@
     />
 
     <div class="content">
-      <!-- User Information -->
-      <div class="section">
-        <h2 class="section-title">USER INFORMATION</h2>
-        <div class="info-form">
-          <div class="input-field">
-            <input 
-              v-model="userInfo.name"
-              placeholder="Name *"
-              class="custom-input"
-            >
-          </div>
-          <div class="input-field">
-            <input 
-              v-model="userInfo.phone"
-              placeholder="Phone *"
-              class="custom-input"
-              type="tel"
-            >
-            <div class="input-hint">Used for receiving booking notifications</div>
-          </div>
-          <div class="input-field">
-            <input 
-              v-model="userInfo.email"
-              placeholder="Email (Optional)"
-              class="custom-input"
-              type="email"
-            >
-            <div class="input-hint">Used for receiving booking confirmation</div>
-          </div>
-        </div>
-      </div>
-
       <!-- Order Information -->
       <div class="section">
         <h2 class="section-title">ORDER INFORMATION</h2>
@@ -55,6 +23,29 @@
           <div class="info-row">
             <span class="label">Status</span>
             <span class="value status">Pending Payment</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Information -->
+      <div class="section">
+        <h2 class="section-title">USER INFORMATION</h2>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="label">Name</span>
+            <span class="value">{{ driverInfo.name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phone</span>
+            <span class="value">{{ driverInfo.phone }}</span>
+          </div>
+          <div class="info-row" v-if="driverInfo.email">
+            <span class="label">Email</span>
+            <span class="value">{{ driverInfo.email }}</span>
+          </div>
+          <div class="info-hint">
+            <van-icon name="info-o" />
+            <span>Booking notifications will be sent to your phone</span>
           </div>
         </div>
       </div>
@@ -241,10 +232,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showToast } from 'vant';
 import { mockParkingLots } from '@/utils/helpers';
+import { formatDateTime, formatDuration } from '@/utils/format';
 
 interface UserInfo {
   name: string;
@@ -259,10 +251,16 @@ interface Vehicle {
   color?: string;
 }
 
+interface DriverInfo {
+  name: string;
+  phone: string;
+  email: string;
+}
+
 const route = useRoute();
 const router = useRouter();
 
-const userInfo = ref<UserInfo>({
+const driverInfo = ref<DriverInfo>({
   name: '',
   phone: '',
   email: ''
@@ -322,7 +320,7 @@ const spotType = ref('Standard');  // 这里可以从之前的选择中获取
 const spotLocation = ref('Zone A - 123');  // 这里可以是动态分配的
 
 const isValid = computed(() => {
-  return userInfo.value.name && userInfo.value.phone;
+  return true; // 因为信息已经在上一页验证过了
 });
 
 function formatTime(date: Date) {
@@ -356,27 +354,43 @@ function handlePayment() {
 
 // 控制车辆列表的展开/收起
 const showAllVehicles = ref(false);
+
+onMounted(() => {
+  try {
+    driverInfo.value = JSON.parse(route.query.driver as string || '{}');
+  } catch (error) {
+    console.error('Failed to parse driver data:', error);
+    showToast('Invalid driver data');
+    router.back();
+  }
+});
 </script>
 
 <style scoped>
 .confirm-page {
   min-height: 100vh;
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--page-background);
+  color: var(--text-primary);
   padding-bottom: 80px;
+  padding-top: 46px;
 }
 
 .custom-nav {
-  background: #1a1a1a;
+  background: var(--card-background);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 :deep(.custom-nav .van-nav-bar__title) {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 18px;
 }
 
 :deep(.van-nav-bar__arrow) {
-  color: #fff !important;
+  color: var(--text-primary) !important;
 }
 
 .content {
@@ -388,42 +402,25 @@ const showAllVehicles = ref(false);
 }
 
 .section-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  color: #7c4dff;
-  margin: 0 0 12px;
-  letter-spacing: 1px;
-}
-
-.info-form {
-  display: grid;
-  gap: 12px;
-}
-
-.input-field {
-  background: #2a2a2a;
-  border-radius: 8px;
-}
-
-.custom-input {
-  width: 100%;
-  height: 48px;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 16px;
-  padding: 0 16px;
-  outline: none;
-}
-
-.custom-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--primary-color);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .info-card {
-  background: #2a2a2a;
+  background: var(--card-background);
   border-radius: 12px;
   padding: 16px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.info-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
 }
 
 .card-header {
@@ -441,8 +438,8 @@ const showAllVehicles = ref(false);
 .info-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
-  font-size: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .info-row:last-child {
@@ -456,19 +453,21 @@ const showAllVehicles = ref(false);
 }
 
 .label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 
 .value {
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .value.status {
-  color: #ffd700;
+  color: var(--warning-color);
 }
 
 .value.price {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-size: 18px;
 }
 
@@ -478,22 +477,24 @@ const showAllVehicles = ref(false);
   left: 0;
   right: 0;
   padding: 16px;
-  background: #1a1a1a;
-  border-top: 1px solid #2a2a2a;
+  background: var(--card-background);
+  border-top: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
 }
 
 .submit-btn {
-  background: #7c4dff;
+  background: var(--primary-color);
   border: none;
   height: 44px;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 500;
+  color: #ffffff;
 }
 
 :deep(.submit-btn.van-button--disabled) {
   opacity: 0.5;
-  background: #7c4dff;
+  background: var(--status-default);
 }
 
 .input-hint {
@@ -523,9 +524,10 @@ const showAllVehicles = ref(false);
 }
 
 .plate-number {
-  font-size: 18px;
+  font-family: 'SF Mono', monospace;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
   font-weight: 500;
-  letter-spacing: 1px;
 }
 
 .valet-vehicle {
@@ -581,16 +583,16 @@ const showAllVehicles = ref(false);
 }
 
 .expand-button:hover {
-  background: rgba(124, 77, 255, 0.1);
+  background: var(--highlight-background);
 }
 
 .expand-button span {
   font-size: 13px;
-  color: #7c4dff;
+  color: var(--primary-color);
 }
 
 .expand-button .van-icon {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-size: 14px;
 }
 
@@ -619,7 +621,7 @@ const showAllVehicles = ref(false);
 
 .divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-color);
   margin: 8px 0;
 }
 
@@ -643,11 +645,56 @@ const showAllVehicles = ref(false);
 
 .expand-button span {
   font-size: 14px;
-  color: #7c4dff;
+  color: var(--primary-color);
 }
 
 .expand-button .van-icon {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-size: 14px;
+}
+
+/* 安全区适配 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-bar {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  
+  .confirm-page {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+/* 优化车牌号显示 */
+.plate-number {
+  font-family: 'SF Mono', monospace;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* 优化卡片悬停效果 */
+.info-card {
+  transition: all 0.2s ease;
+}
+
+.info-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+}
+
+.info-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.info-hint .van-icon {
+  font-size: 14px;
+  color: var(--primary-color);
 }
 </style> 

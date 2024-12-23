@@ -198,12 +198,24 @@ function handleConfirm() {
 <style scoped>
 .vehicle-page {
   min-height: 100vh;
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--page-background);
+  color: var(--text-primary);
   padding-bottom: 80px;
 }
 
-/* ... 其他基础样式保持不变 ... */
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+}
+
+.section-title {
+  color: var(--primary-color);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
 
 .recent-plates {
   display: flex;
@@ -213,7 +225,7 @@ function handleConfirm() {
 }
 
 .plate-tag {
-  background: #2a2a2a;
+  background: var(--secondary-background);
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -222,14 +234,16 @@ function handleConfirm() {
 }
 
 .plate-tag:hover {
-  background: #7c4dff;
+  background: var(--primary-color);
+  color: #ffffff;
 }
 
 .vehicle-form {
   margin-bottom: 24px;
   padding: 16px;
-  background: #2a2a2a;
+  background: var(--card-background);
   border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 
 .form-header {
@@ -243,8 +257,8 @@ function handleConfirm() {
   font-size: 12px;
   padding: 4px 12px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ff4d4f;
+  border: 1px solid var(--border-color);
+  color: var(--danger-color);
 }
 
 .add-vehicle {
@@ -253,11 +267,98 @@ function handleConfirm() {
 
 .add-btn {
   background: transparent;
-  border: 1px dashed #7c4dff;
-  color: #7c4dff;
+  border: 1px dashed var(--primary-color);
+  color: var(--primary-color);
   height: 44px;
   border-radius: 12px;
 }
 
-/* ... 其他样式保持不变 ... */
+.custom-input {
+  background: var(--secondary-background);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  width: 100%;
+  font-size: 15px;
+}
+
+.custom-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.submit-btn {
+  height: 44px;
+  font-size: 16px;
+  font-weight: 500;
+  background: var(--primary-color);
+  border: none;
+  color: #ffffff;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  background: var(--status-default);
+}
+
+.content {
+  padding: 16px;
+}
+
+.custom-nav {
+  background: var(--card-background);
+}
+
+:deep(.van-nav-bar) {
+  background: var(--card-background);
+}
+
+:deep(.van-nav-bar__title),
+:deep(.van-nav-bar__text),
+:deep(.van-nav-bar .van-icon) {
+  color: var(--text-primary);
+}
+
+.vehicles-count {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--secondary-background);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.input-row {
+  display: flex;
+  gap: 12px;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card-background);
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+/* 安全区适配 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-bar {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  
+  .vehicle-page {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
 </style>
