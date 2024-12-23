@@ -1,0 +1,91 @@
+// 主题色配置
+:root {
+  // 主色调
+  --primary-color: #4361ee;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  
+  // 背景色
+  --page-background: #f7f8fa;
+  --card-background: #ffffff;
+  
+  // 文字颜色
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a5568;
+  --text-tertiary: #718096;
+  
+  // 边框和分割线
+  --border-color: #ebedf0;
+  --divider-color: #f0f2f5;
+  
+  // 阴影
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+// Vant 组件主题覆盖
+.van-nav-bar {
+  background-color: var(--card-background);
+  box-shadow: var(--shadow-sm);
+  
+  .van-nav-bar__title {
+    color: var(--text-primary);
+  }
+  
+  .van-icon {
+    color: var(--text-primary);
+  }
+}
+
+.van-button {
+  &--primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  &--success {
+    background: var(--success-color);
+    border-color: var(--success-color);
+  }
+}
+
+.van-dialog {
+  background: var(--card-background);
+  
+  .van-dialog__header {
+    color: var(--text-primary);
+  }
+  
+  .van-dialog__message {
+    color: var(--text-secondary);
+  }
+}
+
+.van-field {
+  background: transparent;
+  
+  .van-field__label {
+    color: var(--text-secondary);
+  }
+  
+  .van-field__control {
+    color: var(--text-primary);
+  }
+}
+
+// 通用卡片样式
+.card {
+  background: var(--card-background);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+// 通用页面容器样式
+.page-container {
+  min-height: 100vh;
+  background: var(--page-background);
+  padding-top: 46px;
+} 

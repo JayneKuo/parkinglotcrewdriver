@@ -899,7 +899,7 @@ function shouldShowDockSpot(status: string) {
 
 <style scoped>
 .orders-page {
-  background: #141414;
+  background: var(--page-background);
   min-height: 100vh;
   padding: 16px 16px 0;
 }
@@ -907,7 +907,7 @@ function shouldShowDockSpot(status: string) {
 .page-title {
   font-size: 24px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0 0 16px;
   padding: 0 4px;
 }
@@ -916,7 +916,7 @@ function shouldShowDockSpot(status: string) {
   position: sticky;
   top: 0;
   z-index: 99;
-  background: #141414;
+  background: var(--page-background);
   margin: 0 -16px;
   padding: 0 16px 12px;
 }
@@ -926,20 +926,22 @@ function shouldShowDockSpot(status: string) {
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
+  background: var(--card-background);
 }
 
 .search-input {
   flex: 1;
+  background: var(--search-background);
 }
 
 .filter-btn {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #1a1a1a;
+  background: var(--secondary-background);
   padding: 8px 12px;
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-secondary);
   font-size: 14px;
   cursor: pointer;
 }
@@ -950,7 +952,7 @@ function shouldShowDockSpot(status: string) {
 }
 
 :deep(.van-search__content) {
-  background: #1a1a1a;
+  background: var(--search-background);
 }
 
 /* Status filter popup styles */
@@ -965,7 +967,7 @@ function shouldShowDockSpot(status: string) {
   padding: 16px;
   font-size: 16px;
   font-weight: 500;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .popup-header .van-icon {
@@ -980,12 +982,12 @@ function shouldShowDockSpot(status: string) {
 .status-item {
   padding: 16px 0;
   font-size: 15px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
   cursor: pointer;
 }
 
 .status-item.active {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
@@ -995,7 +997,7 @@ function shouldShowDockSpot(status: string) {
 
 .tab-group {
   display: flex;
-  background: #1a1a1a;
+  background: var(--card-background);
   border-radius: 12px;
   padding: 4px;
   margin-bottom: 20px;
@@ -1006,7 +1008,7 @@ function shouldShowDockSpot(status: string) {
   text-align: center;
   padding: 8px 4px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-tertiary);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -1018,24 +1020,25 @@ function shouldShowDockSpot(status: string) {
 
 .tab.active {
   background: #fff;
-  color: #000;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .count {
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--secondary-background);
   padding: 1px 4px;
   border-radius: 8px;
   min-width: 16px;
+  color: var(--text-secondary);
 }
 
 .tab.active .count {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--highlight-background);
 }
 
 .order-card {
-  background: #1a1a1a;
+  background: var(--card-background);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 12px;
@@ -1065,7 +1068,7 @@ function shouldShowDockSpot(status: string) {
 .venue-name {
   font-size: 18px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
   flex: 1;
   min-width: 0;
@@ -1105,7 +1108,7 @@ function shouldShowDockSpot(status: string) {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #888;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 12px;
 }
@@ -1116,7 +1119,7 @@ function shouldShowDockSpot(status: string) {
 }
 
 .time-info {
-  background: #222;
+  background: var(--time-block-background);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -1132,12 +1135,12 @@ function shouldShowDockSpot(status: string) {
 .time-row .time {
   font-size: 15px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .time-row .van-icon {
   font-size: 16px;
-  color: #666;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -1153,40 +1156,40 @@ function shouldShowDockSpot(status: string) {
 }
 
 .warning-icon {
-  color: #e71d36; /* 红色 - 警告 */
+  color: var(--danger-color); /* 红色 - 警告 */
 }
 
 .alert-icon {
-  color: #ff9f1c; /* 橙色 - 提醒 */
+  color: var(--warning-color); /* 橙色 - 提醒 */
 }
 
 .info-icon {
-  color: #4361ee; /* 蓝色 - 信息 */
+  color: var(--primary-color); /* 蓝色 - 信息 */
 }
 
 .warning-text {
-  color: #e71d36;
+  color: var(--danger-color);
   font-weight: 500;
 }
 
 .alert-text {
-  color: #ff9f1c;
+  color: var(--warning-color);
   font-weight: 500;
 }
 
 .reservation {
-  color: #4361ee;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .duration {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .info-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--divider-color);
   margin: 12px 0;
 }
 
@@ -1203,12 +1206,12 @@ function shouldShowDockSpot(status: string) {
 }
 
 .spot-row .van-icon {
-  color: #666;
+  color: var(--text-tertiary);
   font-size: 16px;
 }
 
 .spot-text {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 15px;
   display: flex;
   align-items: center;
@@ -1216,12 +1219,12 @@ function shouldShowDockSpot(status: string) {
 }
 
 .zone, .space {
-  color: #7c4dff;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .divider {
-  color: #444;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -1237,13 +1240,13 @@ function shouldShowDockSpot(status: string) {
 
 .car-plate-info .van-icon {
   font-size: 16px;
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .plate {
   font-family: 'SF Mono', monospace;
-  background: rgba(124, 77, 255, 0.15);
-  color: #7c4dff;
+  background: var(--plate-background);
+  color: var(--primary-color);
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 15px;
@@ -1254,7 +1257,7 @@ function shouldShowDockSpot(status: string) {
 .price {
   font-size: 18px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin-left: auto;
 }
 
@@ -1266,7 +1269,7 @@ function shouldShowDockSpot(status: string) {
 
 :deep(.van-loading),
 :deep(.van-list__finished-text) {
-  color: #666;
+  color: var(--text-tertiary);
   padding: 20px 0;
 }
 
@@ -1275,7 +1278,7 @@ function shouldShowDockSpot(status: string) {
 }
 
 .overtime {
-  color: #e71d36;
+  color: var(--danger-color);
   font-weight: 500;
   font-size: 14px;
   flex-shrink: 0;
@@ -1300,18 +1303,18 @@ function shouldShowDockSpot(status: string) {
 }
 
 .service-type.valet {
-  background: rgba(124, 77, 255, 0.15);
-  color: #7c4dff;
+  background: var(--highlight-background);
+  color: var(--primary-color);
 }
 
 .service-type.parking {
-  background: rgba(46, 196, 182, 0.15);
-  color: #2ec4b6;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success-color);
 }
 
 .service-type.dock {
-  background: rgba(255, 159, 28, 0.15);
-  color: #ff9f1c;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warning-color);
 }
 
 /* 修改原有的 card-header 样式 */
@@ -1325,7 +1328,7 @@ function shouldShowDockSpot(status: string) {
 .venue-name {
   font-size: 18px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
   flex: 1;
   min-width: 0;
@@ -1343,8 +1346,8 @@ function shouldShowDockSpot(status: string) {
   padding: 8px 12px;
   font-size: 14px;
   line-height: 1.4;
-  color: #fff;
-  background: #333;
+  color: var(--text-primary);
+  background: var(--card-background);
   border-radius: 4px;
   word-break: break-word;
 }
@@ -1353,8 +1356,8 @@ function shouldShowDockSpot(status: string) {
 :deep(.van-popover) {
   --van-popover-action-width: auto;
   --van-popover-action-height: auto;
-  --van-popover-light-text-color: #fff;
-  --van-popover-light-background: #333;
+  --van-popover-light-text-color: var(--text-primary);
+  --van-popover-light-background: var(--card-background);
 }
 
 /* 添加悬停效果 */
@@ -1368,10 +1371,10 @@ function shouldShowDockSpot(status: string) {
 }
 
 .group-title {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 14px;
   padding: 8px 16px;
-  background: #1a1a1a;
+  background: var(--secondary-background);
 }
 
 .status-list {
@@ -1381,17 +1384,17 @@ function shouldShowDockSpot(status: string) {
 
 .status-item {
   padding: 12px 16px;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .status-item:active {
-  background: rgba(124, 77, 255, 0.05);
+  background: var(--highlight-background);
 }
 
 .status-item.active {
-  color: #7c4dff;
-  background: rgba(124, 77, 255, 0.1);
+  color: var(--primary-color);
+  background: var(--highlight-background);
 }
 </style> 

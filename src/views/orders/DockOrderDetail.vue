@@ -213,6 +213,7 @@ import { showToast, showDialog } from 'vant';
 import { formatTime } from '@/utils/format';
 import { OrderStatus, ServiceType } from '@/types/orders';
 import { calculateDuration } from '@/utils/time';
+import dayjs from 'dayjs';
 
 interface DockOrder {
   id: string | number;
@@ -410,9 +411,56 @@ const handleModify = () => {
 };
 
 // 处理入场
-const handleCheckIn = () => {
-  // TODO: 实现入场逻辑
-  showToast('Check-in functionality coming soon');
+const handleCheckIn = async () => {
+  try {
+    // 检查是否在预约时间前30分钟内
+    const startTime = dayjs(currentOrder.value?.startTime);
+    const now = dayjs();
+    const diffMinutes = startTime.diff(now, 'minute');
+    
+    if (diffMinutes > 30) {
+      showDialog({
+        title: '提示',
+        message: '请在预约时间前30分钟内办理入场',
+        theme: 'round-button',
+        confirmButtonText: '我知道了'
+      });
+      return;
+    }
+    
+    // 显示确认对话框
+    const result = await showDialog({
+      title: '确认入场',
+      message: `确认为车辆 ${currentOrder.value?.vehicles[0]?.licensePlate} 办理入场？`,
+      theme: 'round-button',
+      showCancelButton: true,
+      confirmButtonText: '确认入场',
+      cancelButtonText: '取消'
+    });
+
+    if (result === 'confirm') {
+      // TODO: 调用入场 API
+      if (currentOrder.value) {
+        currentOrder.value.status = OrderStatus.Arrived;
+        currentOrder.value.checkInTime = new Date().toISOString();
+        // 分配泊位号
+        currentOrder.value.spotNo = `D${String(Math.floor(Math.random() * 100)).padStart(3, '0')}`;
+      }
+      
+      showToast({
+        type: 'success',
+        message: '入场成功',
+        duration: 2000
+      });
+    }
+  } catch (error) {
+    console.error('Check in failed:', error);
+    showToast({
+      type: 'fail',
+      message: '入场失败，请重试',
+      duration: 2000
+    });
+  }
 };
 
 // 处理支付
@@ -421,10 +469,84 @@ const handlePayment = () => {
   showToast('Payment functionality coming soon');
 };
 
-// 处理离场
-const handleCheckOut = () => {
-  // TODO: 实现离场逻辑
-  showToast('Check-out functionality coming soon');
+// 处理出场
+const handleCheckOut = async () => {
+  try {
+    // 检查是否已完成装卸
+    if (currentOrder.value?.status !== OrderStatus.LoadingCompleted) {
+      showDialog({
+        title: '提示',
+        message: '请在完成装卸后办理出场',
+        theme: 'round-button',
+        confirmButtonText: '我知道了'
+      });
+      return;
+    }
+    
+    // 检查是否有未支付费用
+    if (currentOrder.value?.payment?.status === 'unpaid') {
+      showDialog({
+        title: '提示',
+        message: '存在未支付费用，请先完成支付',
+        theme: 'round-button',
+        confirmButtonText: '去支付',
+        cancelButtonText: '取消'
+      }).then((action) => {
+        if (action === 'confirm') {
+          handlePayment();
+        }
+      });
+      return;
+    }
+    
+    // 显示确认对话框
+    const result = await showDialog({
+      title: '确认出场',
+      message: `确认为车辆 ${currentOrder.value?.vehicles[0]?.licensePlate} 办理出场？`,
+      theme: 'round-button',
+      showCancelButton: true,
+      confirmButtonText: '确认出场',
+      cancelButtonText: '取消'
+    });
+
+    if (result === 'confirm') {
+      // TODO: 调用出场 API
+      if (currentOrder.value) {
+        currentOrder.value.status = OrderStatus.Completed;
+        currentOrder.value.checkOutTime = new Date().toISOString();
+      }
+      
+      showToast({
+        type: 'success',
+        message: '出场成功',
+        duration: 2000
+      });
+      
+      // 显示评价提示
+      setTimeout(() => {
+        showDialog({
+          title: '服务评价',
+          message: '感谢使用我们的服务，是否对本次服务进行评价？',
+          theme: 'round-button',
+          showCancelButton: true,
+          confirmButtonText: '立即评价',
+          cancelButtonText: '暂不评价'
+        }).then((action) => {
+          if (action === 'confirm') {
+            // TODO: 跳转到评价页面
+            showToast('评价功能开发中');
+          }
+        });
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('Check out failed:', error);
+    showToast({
+      type: 'fail',
+      message: '出场失败，请重试',
+      duration: 2000
+    });
+  }
 };
 
 onMounted(async () => {

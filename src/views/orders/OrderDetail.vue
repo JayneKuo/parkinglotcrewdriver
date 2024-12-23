@@ -389,11 +389,9 @@ function handleBack() {
 <style scoped>
 /* 修改基础布局样式 */
 .order-detail {
+  background: var(--page-background);
   min-height: 100vh;
-  background: #1a1a1a;
-  padding-top: 46px;
-  padding-bottom: 80px; /* 为底部按钮留出空间 */
-  position: relative;
+  padding: 56px 16px 80px;
 }
 
 .content {
@@ -401,25 +399,25 @@ function handleBack() {
 }
 
 .custom-nav {
-  background: #1a1a1a;
+  background: var(--card-background);
 }
 
 :deep(.van-nav-bar) {
-  background: #1a1a1a;
+  background: var(--card-background);
 }
 
 :deep(.van-nav-bar__title),
 :deep(.van-nav-bar__text),
 :deep(.van-nav-bar .van-icon) {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* 卡片样式 */
 .info-card {
-  background: #222;
-  border-radius: 12px;
+  background: var(--card-background);
+  border-radius: 16px;
   padding: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .card-header {
@@ -432,7 +430,7 @@ function handleBack() {
 .card-header h3 {
   font-size: 16px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -447,15 +445,17 @@ function handleBack() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .label {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .value {
-  color: #fff !important;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   text-align: right;
@@ -464,15 +464,17 @@ function handleBack() {
 .value.highlight,
 .plate,
 .carrier {
-  color: #fff !important;
-  background: rgba(124, 77, 255, 0.2);
+  color: var(--primary-color) !important;
+  background: var(--highlight-background);
   padding: 4px 12px;
   border-radius: 6px;
+  font-family: 'SF Mono', monospace;
+  letter-spacing: 0.5px;
 }
 
 .plate {
-  background: rgba(124, 77, 255, 0.15);
-  color: #7c4dff;
+  background: var(--highlight-background);
+  color: var(--primary-color);
   padding: 4px 12px;
   border-radius: 6px;
   font-family: 'SF Mono', monospace;
@@ -487,29 +489,29 @@ function handleBack() {
   font-weight: 500;
 }
 
-.status-badge.pending { background: #9c27b0; color: #fff; }
-.status-badge.warning { background: #ff9f1c; color: #fff; }
-.status-badge.primary { background: #4361ee; color: #fff; }
-.status-badge.success { background: #2ec4b6; color: #fff; }
-.status-badge.danger { background: #e71d36; color: #fff; }
-.status-badge.processing { background: #5e35b1; color: #fff; }
-.status-badge.default { background: #666; color: #fff; }
+.status-badge.pending { background: var(--status-pending); color: #ffffff; }
+.status-badge.warning { background: var(--status-warning); color: #ffffff; }
+.status-badge.primary { background: var(--status-primary); color: #ffffff; }
+.status-badge.success { background: var(--status-success); color: #ffffff; }
+.status-badge.danger { background: var(--status-danger); color: #ffffff; }
+.status-badge.processing { background: var(--status-processing); color: #ffffff; }
+.status-badge.default { background: var(--status-default); color: #ffffff; }
 
 /* 总计样式 */
 .total {
   margin-top: 8px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-color);
 }
 
 .total .label {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 500;
 }
 
 .total .value {
-  color: #fff !important;
+  color: var(--text-primary) !important;
   font-size: 18px;
   font-weight: 600;
 }
@@ -524,13 +526,13 @@ function handleBack() {
 
 /* 添加承运商样式 */
 .carrier {
-  color: #7c4dff !important;
+  color: var(--primary-color) !important;
   font-weight: 500;
 }
 
 /* 添加提示文本样式 */
 .hint-text {
-  color: #888 !important;
+  color: var(--text-tertiary) !important;
   font-size: 13px;
   font-style: italic;
   font-weight: normal !important;
@@ -538,18 +540,7 @@ function handleBack() {
 
 /* 添加超时样式 */
 .overtime {
-  color: #e71d36 !important;
-}
-
-/* 添加一些样式 */
-.info-row .value {
-  color: #fff;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.info-row .value:not(:empty) {
-  color: #fff;
+  color: var(--danger-color) !important;
 }
 
 /* 底部操作按钮样式 */
@@ -558,10 +549,11 @@ function handleBack() {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #222;
+  background: var(--card-background);
   padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-color);
   z-index: 100;
+  box-shadow: var(--shadow-md);
 }
 
 .action-buttons {
@@ -583,14 +575,20 @@ function handleBack() {
 }
 
 :deep(.van-button--primary) {
-  background: #7c4dff;
-  border-color: #7c4dff;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 :deep(.van-button--default) {
   background: transparent;
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+:deep(.van-button--danger) {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+  color: #ffffff;
 }
 
 /* 安全区适配 */
@@ -602,5 +600,40 @@ function handleBack() {
   .order-detail {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
+}
+
+/* 顶部订单卡片样式 */
+.order-header-card {
+  background: var(--card-background);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.order-id {
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.created-time {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* 分组标题样式 */
+.section-title {
+  color: var(--primary-color);
+  font-size: 16px;
+  font-weight: 500;
+  margin: 24px 0 16px;
+  padding: 0 4px;
+}
+
+/* 电话图标样式 */
+.phone-icon {
+  color: var(--primary-color);
 }
 </style> 
